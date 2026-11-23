@@ -1,0 +1,6 @@
+{
+  "name": "KPTC Kuwait",
+  "description": "KPTC Kuwait Public Transport Company — Interactive Kuwait bus route maps, stations, operations schedules, and live bus tracking for 23 KPTC routes.",
+  "requestFramePermissions": ["ACCESS_FINE_LOCATION"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
