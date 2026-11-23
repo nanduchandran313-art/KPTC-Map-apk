@@ -29,8 +29,92 @@ object AppStrings {
 
     // Navigation Tabs
     fun navRoutes(lang: AppLanguage) = if (isArabic(lang)) "الخطوط" else "Routes"
-    fun navLiveMap(lang: AppLanguage) = if (isArabic(lang)) "الخريطة الحية" else "Live Map"
+    fun navPlanner(lang: AppLanguage) = if (isArabic(lang)) "الرحلات" else "Planner"
+    fun navLiveMap(lang: AppLanguage) = if (isArabic(lang)) "الخريطة" else "Live Map"
     fun navStations(lang: AppLanguage) = if (isArabic(lang)) "المحطات" else "Stations"
+    fun navCompany(lang: AppLanguage) = if (isArabic(lang)) "الشركة" else "Company"
+
+    // Company Details & Contact Us Constants
+    const val KPTC_PO_BOX_EN = "P.O.Box 375 Safat, 13004 Kuwait"
+    const val KPTC_PO_BOX_AR = "ص.ب 375 الصفاة، 13004 الكويت"
+    const val KPTC_TEL = "22328866"
+    const val KPTC_FAX = "22328870"
+    const val KPTC_HOTLINE = "1880001"
+    const val KPTC_EMAIL = "info@kptc.com.kw"
+
+    fun companyDetailsTitle(lang: AppLanguage) =
+        if (isArabic(lang)) "بيانات الشركة" else "Company Details"
+    fun companyDetailsSubtitle(lang: AppLanguage) =
+        if (isArabic(lang)) "شركة النقل العام الكويتية (KPTC)" else "Kuwait Public Transport Company (KPTC)"
+    fun companyFullName(lang: AppLanguage) =
+        if (isArabic(lang)) "شركة النقل العام الكويتية (ش.م.ك)" else "Kuwait Public Transport Company"
+    fun companyOverview(lang: AppLanguage) = if (isArabic(lang)) {
+        "المشغّل الوطني للنقل العام بالحافلات في دولة الكويت، يخدم جميع المحافظات والمناطق السكنية والتجارية والمطار على مدار اليوم بتعرفة موحدة 250 فلس."
+    } else {
+        "Kuwait's national public bus operator connecting Kuwait City, Hawally, Salmiya, Farwaniya, Jahra, Fahaheel, and Kuwait International Airport with a uniform 250 Fils fare."
+    }
+    fun contactUsTitle(lang: AppLanguage) = if (isArabic(lang)) "اتصل بنا" else "Contact Us"
+    fun poBoxLabel(lang: AppLanguage) = if (isArabic(lang)) "العنوان البريدي" else "Address"
+    fun poBoxDisplay(lang: AppLanguage) =
+        if (isArabic(lang)) "$KPTC_PO_BOX_AR\n$KPTC_PO_BOX_EN" else KPTC_PO_BOX_EN
+    fun telLabel(lang: AppLanguage) = if (isArabic(lang)) "الهاتف (Tel)" else "Tel"
+    fun faxLabel(lang: AppLanguage) = if (isArabic(lang)) "الفاكس (Fax)" else "Fax"
+    fun hotLineLabel(lang: AppLanguage) = if (isArabic(lang)) "الخط الساخن (Hot Line)" else "Hot Line"
+    fun emailLabel(lang: AppLanguage) = if (isArabic(lang)) "البريد الإلكتروني" else "Email"
+    fun callActionLabel(lang: AppLanguage) = if (isArabic(lang)) "اتصال" else "Call"
+    fun emailActionLabel(lang: AppLanguage) = if (isArabic(lang)) "إرسال" else "Email"
+    fun copyActionDesc(label: String, lang: AppLanguage) =
+        if (isArabic(lang)) "نسخ $label" else "Copy $label"
+    fun copiedFeedback(label: String, lang: AppLanguage) =
+        if (isArabic(lang)) "تم نسخ $label" else "$label copied"
+    fun noDialerFeedback(lang: AppLanguage) =
+        if (isArabic(lang)) "لا يوجد تطبيق اتصال متاح على هذا الجهاز" else "No phone app available on this device"
+    fun noEmailAppFeedback(lang: AppLanguage) =
+        if (isArabic(lang)) "لا يوجد تطبيق بريد إلكتروني متاح" else "No email app available on this device"
+    fun serviceHighlightsTitle(lang: AppLanguage) =
+        if (isArabic(lang)) "معلومات التشغيل والخدمات" else "Service Overview"
+    fun standardFareTitle(lang: AppLanguage) = if (isArabic(lang)) "التعرفة الموحدة" else "Standard Fare"
+    fun operatingHoursTitle(lang: AppLanguage) = if (isArabic(lang)) "ساعات التشغيل (الكويت)" else "Operating Hours"
+    fun operatingHoursValue(lang: AppLanguage) =
+        if (isArabic(lang)) "04:20 صباحاً – 11:00 مساءً" else "04:20 AM – 11:00 PM AST"
+    fun networkCoverageTitle(lang: AppLanguage) = if (isArabic(lang)) "تغطية الشبكة" else "Network Coverage"
+    fun networkCoverageValue(routeCount: Int, stopCount: Int, lang: AppLanguage) =
+        if (isArabic(lang)) "$routeCount خطاً • $stopCount محطة" else "$routeCount Routes • $stopCount Stops"
+
+    // Trip Planner Screen
+    fun plannerTitle(lang: AppLanguage) = if (isArabic(lang)) "مخطط الرحلة" else "Trip Planner"
+    fun plannerSubtitle(lang: AppLanguage) =
+        if (isArabic(lang)) "اختر نقطة الانطلاق والوجهة لاقتراح أفضل خطوط KPTC" else "Select start and destination stops for recommended KPTC routes"
+    fun startPointLabel(lang: AppLanguage) = if (isArabic(lang)) "نقطة الانطلاق" else "Start Point"
+    fun destinationPointLabel(lang: AppLanguage) = if (isArabic(lang)) "نقطة الوصول (الوجهة)" else "Destination"
+    fun chooseStartHint(lang: AppLanguage) = if (isArabic(lang)) "اضغط لاختيار محطة الانطلاق" else "Tap to select start station"
+    fun chooseDestHint(lang: AppLanguage) = if (isArabic(lang)) "اضغط لاختيار محطة الوصول" else "Tap to select destination station"
+    fun popularTripsLabel(lang: AppLanguage) = if (isArabic(lang)) "رحلات شائعة في الكويت" else "Popular Kuwait Trips"
+    fun recommendedRoutesHeader(count: Int, lang: AppLanguage) =
+        if (isArabic(lang)) "الخطوط المقترحة ($count)" else "Recommended Routes ($count)"
+    fun directBadge(lang: AppLanguage) = if (isArabic(lang)) "مباشر" else "DIRECT"
+    fun oneTransferBadge(lang: AppLanguage) = if (isArabic(lang)) "تبديل واحد" else "1 TRANSFER"
+    fun stopsHopLabel(stops: Int, lang: AppLanguage) =
+        if (isArabic(lang)) "$stops محطة" else "$stops stops"
+    fun transferAtLabel(stopName: String, lang: AppLanguage) =
+        if (isArabic(lang)) "التبديل في: $stopName" else "Transfer at: $stopName"
+    fun nextBusInMin(mins: Int, lang: AppLanguage) =
+        if (isArabic(lang)) "الباص التالي خلال $mins د" else "Next bus in $mins min"
+    fun boardRouteAt(routeNum: String, from: String, to: String, lang: AppLanguage) =
+        if (isArabic(lang)) "اركب خط $routeNum من $from إلى $to" else "Board Route $routeNum at $from → $to"
+    fun sameStopWarning(lang: AppLanguage) =
+        if (isArabic(lang)) "يرجى اختيار نقطة وصول مختلفة عن نقطة الانطلاق." else "Please select a destination different from your start point."
+    fun noTripFoundTitle(lang: AppLanguage) =
+        if (isArabic(lang)) "لم يتم العثور على خط مباشر أو مشترك" else "No connecting route found"
+    fun noTripFoundDesc(lang: AppLanguage) =
+        if (isArabic(lang)) "جرّب اختيار محطة رئيسية قريبة مثل المرقاب أو المالية أو السالمية." else "Try selecting a nearby major hub such as Mirqab, Maliya, or Salmiya."
+    fun selectPointsPromptTitle(lang: AppLanguage) =
+        if (isArabic(lang)) "خطط رحلتك في الكويت" else "Plan Your Kuwait Bus Trip"
+    fun selectPointsPromptDesc(lang: AppLanguage) =
+        if (isArabic(lang)) "اختر محطة الانطلاق ومحطة الوصول أعلاه أو جرّب إحدى الرحلات الشائعة." else "Pick a start station and destination above, or tap a popular Kuwait trip below."
+    fun viewRouteAction(lang: AppLanguage) = if (isArabic(lang)) "تفاصيل الخط" else "Route Details"
+    fun pickerTitleStart(lang: AppLanguage) = if (isArabic(lang)) "اختر محطة الانطلاق" else "Choose Start Station"
+    fun pickerTitleDest(lang: AppLanguage) = if (isArabic(lang)) "اختر محطة الوصول" else "Choose Destination Station"
 
     // Filter Tabs
     fun filterTabLabel(tab: RouteFilterTab, lang: AppLanguage): String = if (isArabic(lang)) {

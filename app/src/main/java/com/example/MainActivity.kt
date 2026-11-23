@@ -24,9 +24,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AltRoute
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.outlined.AltRoute
+import androidx.compose.material.icons.outlined.Business
 import androidx.compose.material.icons.outlined.DirectionsBus
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Map
@@ -71,18 +75,22 @@ import com.example.ui.KptcViewModel
 import com.example.ui.localization.AppLanguage
 import com.example.ui.localization.AppStrings
 import com.example.ui.localization.LocalAppLanguage
+import com.example.ui.screens.CompanyInfoScreen
 import com.example.ui.screens.LiveMapScreen
 import com.example.ui.screens.RouteDetailScreen
 import com.example.ui.screens.RoutesScreen
 import com.example.ui.screens.StationsScreen
+import com.example.ui.screens.TripPlannerScreen
 import com.example.ui.theme.KptcKuwaitTheme
 import com.example.ui.theme.KptcRoyalBlue
 import kotlinx.coroutines.delay
 
 object KptcDestinations {
     const val ROUTES = "routes"
+    const val PLANNER = "planner"
     const val LIVE_MAP = "live_map"
     const val STATIONS = "stations"
+    const val COMPANY = "company"
     const val ROUTE_DETAIL = "route_detail/{routeNumber}"
 
     fun routeDetail(routeNumber: String): String = "route_detail/$routeNumber"
@@ -105,6 +113,13 @@ private val topLevelTabs = listOf(
         testTag = "nav_tab_routes"
     ),
     TopLevelTab(
+        route = KptcDestinations.PLANNER,
+        label = "Planner",
+        selectedIcon = Icons.Filled.AltRoute,
+        unselectedIcon = Icons.Outlined.AltRoute,
+        testTag = "nav_tab_planner"
+    ),
+    TopLevelTab(
         route = KptcDestinations.LIVE_MAP,
         label = "Live Map",
         selectedIcon = Icons.Filled.Map,
@@ -117,6 +132,13 @@ private val topLevelTabs = listOf(
         selectedIcon = Icons.Filled.LocationOn,
         unselectedIcon = Icons.Outlined.LocationOn,
         testTag = "nav_tab_stations"
+    ),
+    TopLevelTab(
+        route = KptcDestinations.COMPANY,
+        label = "Company",
+        selectedIcon = Icons.Filled.Business,
+        unselectedIcon = Icons.Outlined.Business,
+        testTag = "nav_tab_company"
     )
 )
 
@@ -223,8 +245,10 @@ fun KptcKuwaitApp(
                                 val selected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
                                 val tabLabel = when (tab.route) {
                                     KptcDestinations.ROUTES -> AppStrings.navRoutes(lang)
+                                    KptcDestinations.PLANNER -> AppStrings.navPlanner(lang)
                                     KptcDestinations.LIVE_MAP -> AppStrings.navLiveMap(lang)
-                                    else -> AppStrings.navStations(lang)
+                                    KptcDestinations.STATIONS -> AppStrings.navStations(lang)
+                                    else -> AppStrings.navCompany(lang)
                                 }
                                 NavigationBarItem(
                                     selected = selected,
@@ -254,8 +278,10 @@ fun KptcKuwaitApp(
                                 val selected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
                                 val tabLabel = when (tab.route) {
                                     KptcDestinations.ROUTES -> AppStrings.navRoutes(lang)
+                                    KptcDestinations.PLANNER -> AppStrings.navPlanner(lang)
                                     KptcDestinations.LIVE_MAP -> AppStrings.navLiveMap(lang)
-                                    else -> AppStrings.navStations(lang)
+                                    KptcDestinations.STATIONS -> AppStrings.navStations(lang)
+                                    else -> AppStrings.navCompany(lang)
                                 }
                                 NavigationRailItem(
                                     selected = selected,
@@ -291,6 +317,27 @@ fun KptcKuwaitApp(
                                 onTrackRouteOnMap = { routeNum ->
                                     viewModel.selectMapRoute(routeNum)
                                     navigateToTab(KptcDestinations.LIVE_MAP)
+                                },
+                                onOpenCompanyInfo = {
+                                    navigateToTab(KptcDestinations.COMPANY)
+                                }
+                            )
+                        }
+
+                        composable(KptcDestinations.PLANNER) {
+                            TripPlannerScreen(
+                                uiState = uiState,
+                                onSelectStartStop = viewModel::selectTripStartStop,
+                                onSelectEndStop = viewModel::selectTripEndStop,
+                                onSwapStops = viewModel::swapTripStops,
+                                onApplyQuickTrip = viewModel::applyQuickTrip,
+                                onToggleLanguage = viewModel::toggleLanguage,
+                                onRouteClick = { routeNum ->
+                                    navController.navigate(KptcDestinations.routeDetail(routeNum))
+                                },
+                                onTrackRouteOnMap = { routeNum ->
+                                    viewModel.selectMapRoute(routeNum)
+                                    navigateToTab(KptcDestinations.LIVE_MAP)
                                 }
                             )
                         }
@@ -319,6 +366,13 @@ fun KptcKuwaitApp(
                                     navController.navigate(KptcDestinations.routeDetail(routeNum))
                                 },
                                 onRefreshLocation = viewModel::refreshLocationIfPermitted
+                            )
+                        }
+
+                        composable(KptcDestinations.COMPANY) {
+                            CompanyInfoScreen(
+                                uiState = uiState,
+                                onToggleLanguage = viewModel::toggleLanguage
                             )
                         }
 

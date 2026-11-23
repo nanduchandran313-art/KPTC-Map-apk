@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Favorite
@@ -76,6 +77,7 @@ fun RoutesScreen(
     onToggleLanguage: () -> Unit,
     onRouteClick: (String) -> Unit,
     onTrackRouteOnMap: (String) -> Unit,
+    onOpenCompanyInfo: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val lang = uiState.language
@@ -123,7 +125,26 @@ fun RoutesScreen(
                                     .padding(horizontal = 10.dp, vertical = 4.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            shape = RoundedCornerShape(50),
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(50))
+                                .clickable(onClick = onOpenCompanyInfo)
+                                .testTag("open_company_info_button")
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Business,
+                                    contentDescription = AppStrings.companyDetailsTitle(lang),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
                         LanguageSwitchPill(
                             language = lang,
                             onToggle = onToggleLanguage
@@ -298,79 +319,69 @@ private fun KptcHeroCard(
     activeBusCount: Int,
     routeCount: Int
 ) {
-    Box(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .height(152.dp)
-            .clip(RoundedCornerShape(22.dp))
+            .testTag("kptc_services_hero_card"),
+        shape = RoundedCornerShape(22.dp),
+        color = Color.White,
+        shadowElevation = 2.dp,
+        tonalElevation = 1.dp
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.img_kptc_kuwait_hero),
-            contentDescription = "KPTC Kuwait Public Transport Company Bus on Gulf Road",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            KptcRoyalBlue.copy(alpha = 0.68f),
-                            Color(0xFF061B30).copy(alpha = 0.88f)
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Image(
+                painter = painterResource(id = R.drawable.img_kptc_services_logo),
+                contentDescription = "KPTC Kuwait Public Transport Company Services",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(225.dp)
+                    .background(Color(0xFFFCFCFC))
+                    .padding(top = 6.dp)
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                KptcRoyalBlue,
+                                Color(0xFF073259)
+                            )
                         )
                     )
-                )
-        )
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Surface(
-                    color = Color.White.copy(alpha = 0.18f),
-                    shape = RoundedCornerShape(8.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Surface(
+                        color = Color.White.copy(alpha = 0.18f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = AppStrings.stateOfKuwaitRoutes(routeCount, language),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
                     Text(
-                        text = AppStrings.stateOfKuwaitRoutes(routeCount, language),
+                        text = kuwaitTime,
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        color = Color.White.copy(alpha = 0.92f)
                     )
                 }
-                Text(
-                    text = kuwaitTime,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.92f)
+
+                TelemetryStatusBadge(
+                    isServiceOperating = isServiceOperating,
+                    activeBusCount = activeBusCount
                 )
             }
-
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = AppStrings.heroTitle(language),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = Color.White
-                )
-                Text(
-                    text = AppStrings.heroSubtitle(language),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.88f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            TelemetryStatusBadge(
-                isServiceOperating = isServiceOperating,
-                activeBusCount = activeBusCount
-            )
         }
     }
 }

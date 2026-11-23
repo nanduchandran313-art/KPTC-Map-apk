@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.KuwaitBusData
 import com.example.data.LiveTelemetryEngine
+import com.example.data.TripPlannerEngine
+import com.example.model.BusDirection
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -71,5 +73,46 @@ class ExampleRobolectricTest {
 
         val byArabicDest = com.example.ui.KptcViewModel.filterRoutesList(KuwaitBusData.routes, "الفحيحيل")
         assertTrue(byArabicDest.any { it.number == "999" } && byArabicDest.any { it.number == "102A" })
+    }
+
+    @Test
+    fun `trip planner recommends direct outbound and inbound routes`() {
+        val mirqab = KuwaitBusData.stopsMap.getValue("mirqab")
+        val airport = KuwaitBusData.stopsMap.getValue("airport_t1")
+        val liveBuses = LiveTelemetryEngine.computeLiveBuses(KuwaitBusData.routes, previewModeEnabled = true)
+
+        val outbound = TripPlannerEngine.planTrip(mirqab, airport, KuwaitBusData.routes, liveBuses)
+        val route13Out = outbound.firstOrNull { it.isDirect && it.legs.first().route.number == "13" }
+        assertTrue("Route 13 should connect Mirqab -> Airport directly", route13Out != null)
+        assertEquals(250, route13Out?.totalFareFils)
+
+        val inbound = TripPlannerEngine.planTrip(airport, mirqab, KuwaitBusData.routes, liveBuses)
+        val route13In = inbound.firstOrNull { it.isDirect && it.legs.first().route.number == "13" }
+        assertTrue("Route 13 should connect Airport -> Mirqab in reverse", route13In != null)
+        assertEquals(BusDirection.INBOUND, route13In?.legs?.first()?.direction)
+    }
+
+    @Test
+    fun `trip planner recommends multiple direct routes and 1-transfer itineraries`() {
+        val maliya = KuwaitBusData.stopsMap.getValue("maliya")
+        val fahaheel = KuwaitBusData.stopsMap.getValue("fahaheel_green_tower")
+        val southRoutes = TripPlannerEngine.planTrip(maliya, fahaheel)
+        val directNums = southRoutes.filter { it.isDirect }.map { it.legs.first().route.number }.toSet()
+        assertTrue(setOf("102X", "999", "102A").all { it in directNums })
+
+        val jahra = KuwaitBusData.stopsMap.getValue("jahra_coop")
+        val airport = KuwaitBusData.stopsMap.getValue("airport_t1")
+        val transferTrips = TripPlannerEngine.planTrip(jahra, airport)
+        assertTrue("Jahra -> Airport should return 1-transfer recommendations", transferTrips.isNotEmpty())
+        assertTrue(transferTrips.all { !it.isDirect && it.transferStop != null && it.totalFareFils == 500 })
+    }
+
+    @Test
+    fun `company contact details match official KPTC info`() {
+        assertEquals("P.O.Box 375 Safat, 13004 Kuwait", com.example.ui.localization.AppStrings.KPTC_PO_BOX_EN)
+        assertEquals("22328866", com.example.ui.localization.AppStrings.KPTC_TEL)
+        assertEquals("22328870", com.example.ui.localization.AppStrings.KPTC_FAX)
+        assertEquals("1880001", com.example.ui.localization.AppStrings.KPTC_HOTLINE)
+        assertEquals("info@kptc.com.kw", com.example.ui.localization.AppStrings.KPTC_EMAIL)
     }
 }
