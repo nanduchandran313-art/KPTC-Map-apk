@@ -32,7 +32,7 @@ object AppStrings {
     fun navPlanner(lang: AppLanguage) = if (isArabic(lang)) "الرحلات" else "Planner"
     fun navLiveMap(lang: AppLanguage) = if (isArabic(lang)) "الخريطة" else "Live Map"
     fun navStations(lang: AppLanguage) = if (isArabic(lang)) "المحطات" else "Stations"
-    fun navCompany(lang: AppLanguage) = if (isArabic(lang)) "الشركة" else "Company"
+    fun navCompany(lang: AppLanguage) = if (isArabic(lang)) "تواصل" else "Contact"
 
     // Company Details & Contact Us Constants
     const val KPTC_PO_BOX_EN = "P.O.Box 375 Safat, 13004 Kuwait"
@@ -43,7 +43,7 @@ object AppStrings {
     const val KPTC_EMAIL = "info@kptc.com.kw"
 
     fun companyDetailsTitle(lang: AppLanguage) =
-        if (isArabic(lang)) "بيانات الشركة" else "Company Details"
+        if (isArabic(lang)) "الشركة والتواصل" else "Company & Contact"
     fun companyDetailsSubtitle(lang: AppLanguage) =
         if (isArabic(lang)) "شركة النقل العام الكويتية (KPTC)" else "Kuwait Public Transport Company (KPTC)"
     fun companyFullName(lang: AppLanguage) =
@@ -54,13 +54,20 @@ object AppStrings {
         "Kuwait's national public bus operator connecting Kuwait City, Hawally, Salmiya, Farwaniya, Jahra, Fahaheel, and Kuwait International Airport with a uniform 250 Fils fare."
     }
     fun contactUsTitle(lang: AppLanguage) = if (isArabic(lang)) "اتصل بنا" else "Contact Us"
-    fun poBoxLabel(lang: AppLanguage) = if (isArabic(lang)) "العنوان البريدي" else "Address"
+    fun poBoxLabel(lang: AppLanguage) = if (isArabic(lang)) "العنوان البريدي" else "P.O. Box"
     fun poBoxDisplay(lang: AppLanguage) =
         if (isArabic(lang)) "$KPTC_PO_BOX_AR\n$KPTC_PO_BOX_EN" else KPTC_PO_BOX_EN
     fun telLabel(lang: AppLanguage) = if (isArabic(lang)) "الهاتف (Tel)" else "Tel"
     fun faxLabel(lang: AppLanguage) = if (isArabic(lang)) "الفاكس (Fax)" else "Fax"
     fun hotLineLabel(lang: AppLanguage) = if (isArabic(lang)) "الخط الساخن (Hot Line)" else "Hot Line"
     fun emailLabel(lang: AppLanguage) = if (isArabic(lang)) "البريد الإلكتروني" else "Email"
+    fun headOfficeHoursLabel(lang: AppLanguage) =
+        if (isArabic(lang)) "ساعات خدمة العملاء" else "Customer Support Hours"
+    fun headOfficeHoursValue(lang: AppLanguage) = if (isArabic(lang)) {
+        "الخط الساخن يومياً 04:20 ص – 11:00 م • الإدارة: الأحد–الخميس"
+    } else {
+        "Hot Line Daily 04:20 AM – 11:00 PM • HQ Sun–Thu"
+    }
     fun callActionLabel(lang: AppLanguage) = if (isArabic(lang)) "اتصال" else "Call"
     fun emailActionLabel(lang: AppLanguage) = if (isArabic(lang)) "إرسال" else "Email"
     fun copyActionDesc(label: String, lang: AppLanguage) =
@@ -80,6 +87,55 @@ object AppStrings {
     fun networkCoverageTitle(lang: AppLanguage) = if (isArabic(lang)) "تغطية الشبكة" else "Network Coverage"
     fun networkCoverageValue(routeCount: Int, stopCount: Int, lang: AppLanguage) =
         if (isArabic(lang)) "$routeCount خطاً • $stopCount محطة" else "$routeCount Routes • $stopCount Stops"
+
+    // Service Alerts & Notifications
+    fun serviceAlertsTitle(lang: AppLanguage) =
+        if (isArabic(lang)) "تنبيهات الخدمة المباشرة" else "Live Service Alerts"
+    fun serviceAlertsSubtitle(count: Int, lang: AppLanguage) =
+        if (isArabic(lang)) "$count تنبيهات نشطة للطرق والخطوط" else "$count active route & road updates"
+    fun allAlertsFilter(lang: AppLanguage) = if (isArabic(lang)) "الكل" else "All"
+    fun alertTypeLabel(type: com.example.model.ServiceAlertType, lang: AppLanguage): String = if (isArabic(lang)) {
+        when (type) {
+            com.example.model.ServiceAlertType.ROAD_CLOSURE -> "إغلاق طريق"
+            com.example.model.ServiceAlertType.DELAY -> "تأخير"
+            com.example.model.ServiceAlertType.MAINTENANCE -> "صيانة"
+        }
+    } else {
+        when (type) {
+            com.example.model.ServiceAlertType.ROAD_CLOSURE -> "ROAD CLOSURE"
+            com.example.model.ServiceAlertType.DELAY -> "DELAY"
+            com.example.model.ServiceAlertType.MAINTENANCE -> "MAINTENANCE"
+        }
+    }
+    fun alertTypeFilterLabel(type: com.example.model.ServiceAlertType, lang: AppLanguage): String = if (isArabic(lang)) {
+        when (type) {
+            com.example.model.ServiceAlertType.ROAD_CLOSURE -> "إغلاق طرق"
+            com.example.model.ServiceAlertType.DELAY -> "تأخيرات"
+            com.example.model.ServiceAlertType.MAINTENANCE -> "صيانة"
+        }
+    } else {
+        when (type) {
+            com.example.model.ServiceAlertType.ROAD_CLOSURE -> "Closures"
+            com.example.model.ServiceAlertType.DELAY -> "Delays"
+            com.example.model.ServiceAlertType.MAINTENANCE -> "Maintenance"
+        }
+    }
+    fun alertTitle(alert: com.example.model.ServiceAlert, lang: AppLanguage) =
+        if (isArabic(lang)) alert.titleAr else alert.titleEn
+    fun alertMessage(alert: com.example.model.ServiceAlert, lang: AppLanguage) =
+        if (isArabic(lang)) alert.messageAr else alert.messageEn
+    fun alertCorridor(alert: com.example.model.ServiceAlert, lang: AppLanguage) =
+        if (isArabic(lang)) alert.corridorAr else alert.corridorEn
+    fun viewAllAlertsAction(count: Int, lang: AppLanguage) =
+        if (isArabic(lang)) "عرض الكل ($count)" else "View All ($count)"
+    fun dismissAlertAction(lang: AppLanguage) = if (isArabic(lang)) "إخفاء" else "Dismiss"
+    fun restoreAlertsAction(lang: AppLanguage) = if (isArabic(lang)) "استعادة الكل" else "Restore All"
+    fun noActiveAlertsTitle(lang: AppLanguage) =
+        if (isArabic(lang)) "جميع الخطوط تعمل بشكل منتظم" else "All KPTC routes running normally"
+    fun noActiveAlertsDesc(lang: AppLanguage) =
+        if (isArabic(lang)) "لا توجد تنبيهات نشطة في هذا التصنيف." else "No active alerts in this category."
+    fun affectedRoutesLabel(lang: AppLanguage) =
+        if (isArabic(lang)) "الخطوط المتأثرة:" else "Affected routes:"
 
     // Trip Planner Screen
     fun plannerTitle(lang: AppLanguage) = if (isArabic(lang)) "مخطط الرحلة" else "Trip Planner"

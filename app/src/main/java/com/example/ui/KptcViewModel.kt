@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.KuwaitBusData
 import com.example.data.LiveTelemetryEngine
+import com.example.data.ServiceAlertEngine
 import com.example.data.TripItinerary
 import com.example.data.TripPlannerEngine
 import com.example.data.UserPreferencesRepository
@@ -14,6 +15,8 @@ import com.example.model.BusRoute
 import com.example.model.BusStop
 import com.example.model.LiveBus
 import com.example.model.RouteCategory
+import com.example.model.ServiceAlert
+import com.example.model.ServiceAlertType
 import com.example.model.StationArrival
 import com.example.ui.localization.AppLanguage
 import kotlinx.coroutines.delay
@@ -53,8 +56,14 @@ data class KptcUiState(
     val isFetchingLocation: Boolean = false,
     val tripStartStop: BusStop? = null,
     val tripEndStop: BusStop? = null,
-    val tripRecommendations: List<TripItinerary> = emptyList()
-)
+    val tripRecommendations: List<TripItinerary> = emptyList(),
+    val serviceAlerts: List<ServiceAlert> = ServiceAlertEngine.activeAlerts(),
+    val dismissedAlertIds: Set<String> = emptySet(),
+    val selectedAlertFilter: ServiceAlertType? = null
+) {
+    val activeServiceAlerts: List<ServiceAlert>
+        get() = serviceAlerts.filter { it.id !in dismissedAlertIds }
+}
 
 class KptcViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -72,6 +81,9 @@ class KptcViewModel(application: Application) : AndroidViewModel(application) {
     private val fetchingLocationFlow = MutableStateFlow(false)
     private val tripStartStopFlow = MutableStateFlow<BusStop?>(null)
     private val tripEndStopFlow = MutableStateFlow<BusStop?>(null)
+    private val serviceAlertsFlow = MutableStateFlow(ServiceAlertEngine.activeAlerts())
+    private val dismissedAlertsFlow = MutableStateFlow<Set<String>>(emptySet())
+    private val alertFilterFlow = MutableStateFlow<ServiceAlertType?>(null)
 
     private val favoritesFlow = prefsRepo.favoriteRoutesFlow
     private val previewModeFlow = prefsRepo.livePreviewOutsideHoursFlow
@@ -97,6 +109,13 @@ class KptcViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private val tripEndpointsFlow = combine(tripStartStopFlow, tripEndStopFlow) { s, e -> s to e }
+    private val alertStateFlow = combine(
+        serviceAlertsFlow,
+        dismissedAlertsFlow,
+        alertFilterFlow
+    ) { alerts, dismissed, filter ->
+        Triple(alerts, dismissed, filter)
+    }
 
     val uiState: StateFlow<KptcUiState> = combine(
         filterInputsFlow,
@@ -105,11 +124,12 @@ class KptcViewModel(application: Application) : AndroidViewModel(application) {
         kuwaitClockFlow,
         combine(
             combine(userCoordsFlow, fetchingLocationFlow) { coords, loading -> coords to loading },
-            tripEndpointsFlow
-        ) { locPair, tripPair -> locPair to tripPair }
-    ) { filters, mapSel, buses, clock, locAndTrip ->
-        val locationPair = locAndTrip.first
-        val tripPair = locAndTrip.second
+            combine(tripEndpointsFlow, alertStateFlow) { tripPair, alertTriple -> tripPair to alertTriple }
+        ) { locPair, tripAndAlerts -> locPair to tripAndAlerts }
+    ) { filters, mapSel, buses, clock, combinedTail ->
+        val locationPair = combinedTail.first
+        val tripPair = combinedTail.second.first
+        val alertTriple = combinedTail.second.second
 
         val filteredRoutes = filterRoutes(
             routes = KuwaitBusData.routes,
@@ -157,7 +177,10 @@ class KptcViewModel(application: Application) : AndroidViewModel(application) {
             isFetchingLocation = locationPair.second,
             tripStartStop = startStop,
             tripEndStop = endStop,
-            tripRecommendations = recommendations
+            tripRecommendations = recommendations,
+            serviceAlerts = alertTriple.first,
+            dismissedAlertIds = alertTriple.second,
+            selectedAlertFilter = alertTriple.third
         )
     }.stateIn(
         scope = viewModelScope,
@@ -186,6 +209,7 @@ class KptcViewModel(application: Application) : AndroidViewModel(application) {
                     nowMillis = now,
                     previewModeEnabled = latestPreview
                 )
+                serviceAlertsFlow.value = ServiceAlertEngine.activeAlerts(now)
                 delay(1_000L)
             }
         }
@@ -250,6 +274,18 @@ class KptcViewModel(application: Application) : AndroidViewModel(application) {
     fun applyQuickTrip(startId: String, endId: String) {
         tripStartStopFlow.value = KuwaitBusData.stopsMap[startId]
         tripEndStopFlow.value = KuwaitBusData.stopsMap[endId]
+    }
+
+    fun dismissAlert(alertId: String) {
+        dismissedAlertsFlow.value = dismissedAlertsFlow.value + alertId
+    }
+
+    fun restoreAllAlerts() {
+        dismissedAlertsFlow.value = emptySet()
+    }
+
+    fun setAlertFilter(filter: ServiceAlertType?) {
+        alertFilterFlow.value = filter
     }
 
     fun selectMapRoute(routeNumber: String?) {

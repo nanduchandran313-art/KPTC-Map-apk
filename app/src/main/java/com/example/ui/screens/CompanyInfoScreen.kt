@@ -381,6 +381,16 @@ fun CompanyInfoScreen(
                             },
                             modifier = Modifier.testTag("contact_email_button")
                         )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                        // Customer Support Hours
+                        ServiceHighlightRow(
+                            icon = Icons.Default.Schedule,
+                            iconTint = MaterialTheme.colorScheme.primary,
+                            label = AppStrings.headOfficeHoursLabel(lang),
+                            value = AppStrings.headOfficeHoursValue(lang)
+                        )
                     }
                 }
             }

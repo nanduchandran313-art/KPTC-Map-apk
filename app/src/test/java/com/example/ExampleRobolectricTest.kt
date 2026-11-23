@@ -115,4 +115,22 @@ class ExampleRobolectricTest {
         assertEquals("1880001", com.example.ui.localization.AppStrings.KPTC_HOTLINE)
         assertEquals("info@kptc.com.kw", com.example.ui.localization.AppStrings.KPTC_EMAIL)
     }
+
+    @Test
+    fun `service alerts cover road closures delays maintenance and specific routes`() {
+        val alerts = com.example.data.ServiceAlertEngine.activeAlerts()
+        val types = alerts.map { it.type }.toSet()
+        assertTrue(com.example.model.ServiceAlertType.ROAD_CLOSURE in types)
+        assertTrue(com.example.model.ServiceAlertType.DELAY in types)
+        assertTrue(com.example.model.ServiceAlertType.MAINTENANCE in types)
+
+        alerts.forEach { alert ->
+            assertTrue(alert.affectedRouteNumbers.isNotEmpty())
+            assertTrue(alert.titleEn.isNotBlank() && alert.titleAr.isNotBlank())
+            assertTrue(alert.messageEn.isNotBlank() && alert.messageAr.isNotBlank())
+        }
+
+        val route13Alerts = com.example.data.ServiceAlertEngine.alertsForRoute("13", alerts)
+        assertTrue("Route 13 should have an active delay alert", route13Alerts.isNotEmpty())
+    }
 }

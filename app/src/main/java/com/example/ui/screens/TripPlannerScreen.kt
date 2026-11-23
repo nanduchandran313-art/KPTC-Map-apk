@@ -71,6 +71,8 @@ import com.example.model.BusStop
 import com.example.ui.KptcUiState
 import com.example.ui.components.LanguageSwitchPill
 import com.example.ui.components.RouteBadgePill
+import com.example.ui.components.ServiceAlertBanner
+import com.example.ui.components.ServiceAlertBellButton
 import com.example.ui.localization.AppLanguage
 import com.example.ui.localization.AppStrings
 import com.example.ui.theme.DesertGold
@@ -107,6 +109,8 @@ fun TripPlannerScreen(
     onToggleLanguage: () -> Unit,
     onRouteClick: (String) -> Unit,
     onTrackRouteOnMap: (String) -> Unit,
+    onOpenAlerts: () -> Unit = {},
+    onDismissAlert: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val lang = uiState.language
@@ -116,6 +120,19 @@ fun TripPlannerScreen(
     val openPicker: (PickingEndpoint) -> Unit = { target ->
         stationSearchQuery = ""
         pickingEndpoint = target
+    }
+
+    val recommendedRouteNums = remember(uiState.tripRecommendations) {
+        uiState.tripRecommendations.flatMap { it.legs }.map { it.route.number }.toSet()
+    }
+    val bannerAlerts = remember(uiState.activeServiceAlerts, recommendedRouteNums) {
+        if (recommendedRouteNums.isNotEmpty()) {
+            uiState.activeServiceAlerts.filter { alert ->
+                alert.affectedRouteNumbers.any { it in recommendedRouteNums }
+            }
+        } else {
+            uiState.activeServiceAlerts
+        }
     }
 
     Box(
@@ -150,10 +167,29 @@ fun TripPlannerScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    ServiceAlertBellButton(
+                        activeCount = uiState.activeServiceAlerts.size,
+                        language = lang,
+                        onClick = onOpenAlerts
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
                     LanguageSwitchPill(
                         language = lang,
                         onToggle = onToggleLanguage
+                    )
+                }
+            }
+
+            // Contextual Service Alert Banner for Recommended Routes (or active network alerts)
+            if (bannerAlerts.isNotEmpty()) {
+                item {
+                    ServiceAlertBanner(
+                        alerts = bannerAlerts,
+                        language = lang,
+                        onOpenNotifications = onOpenAlerts,
+                        onDismissAlert = onDismissAlert,
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
                 }
             }

@@ -25,12 +25,12 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AltRoute
-import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.ContactPhone
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.outlined.AltRoute
-import androidx.compose.material.icons.outlined.Business
+import androidx.compose.material.icons.outlined.ContactPhone
 import androidx.compose.material.icons.outlined.DirectionsBus
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Map
@@ -72,6 +72,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.ui.KptcViewModel
+import com.example.ui.components.ServiceAlertsNotificationSheet
 import com.example.ui.localization.AppLanguage
 import com.example.ui.localization.AppStrings
 import com.example.ui.localization.LocalAppLanguage
@@ -82,7 +83,6 @@ import com.example.ui.screens.RoutesScreen
 import com.example.ui.screens.StationsScreen
 import com.example.ui.screens.TripPlannerScreen
 import com.example.ui.theme.KptcKuwaitTheme
-import com.example.ui.theme.KptcRoyalBlue
 import kotlinx.coroutines.delay
 
 object KptcDestinations {
@@ -135,9 +135,9 @@ private val topLevelTabs = listOf(
     ),
     TopLevelTab(
         route = KptcDestinations.COMPANY,
-        label = "Company",
-        selectedIcon = Icons.Filled.Business,
-        unselectedIcon = Icons.Outlined.Business,
+        label = "Contact",
+        selectedIcon = Icons.Filled.ContactPhone,
+        unselectedIcon = Icons.Outlined.ContactPhone,
         testTag = "nav_tab_company"
     )
 )
@@ -218,6 +218,7 @@ fun KptcKuwaitApp(
     val isTopLevel = currentDestination?.route in topLevelTabs.map { it.route }
     val lang = uiState.language
     val layoutDir = if (lang == AppLanguage.ARABIC) LayoutDirection.Rtl else LayoutDirection.Ltr
+    var showAlertsSheet by remember { mutableStateOf(false) }
 
     val navigateToTab: (String) -> Unit = { route ->
         navController.navigate(route) {
@@ -320,7 +321,9 @@ fun KptcKuwaitApp(
                                 },
                                 onOpenCompanyInfo = {
                                     navigateToTab(KptcDestinations.COMPANY)
-                                }
+                                },
+                                onOpenAlerts = { showAlertsSheet = true },
+                                onDismissAlert = viewModel::dismissAlert
                             )
                         }
 
@@ -338,7 +341,9 @@ fun KptcKuwaitApp(
                                 onTrackRouteOnMap = { routeNum ->
                                     viewModel.selectMapRoute(routeNum)
                                     navigateToTab(KptcDestinations.LIVE_MAP)
-                                }
+                                },
+                                onOpenAlerts = { showAlertsSheet = true },
+                                onDismissAlert = viewModel::dismissAlert
                             )
                         }
 
@@ -353,7 +358,9 @@ fun KptcKuwaitApp(
                                 onOpenRouteDetail = { routeNum ->
                                     navController.navigate(KptcDestinations.routeDetail(routeNum))
                                 },
-                                onRefreshLocation = viewModel::refreshLocationIfPermitted
+                                onRefreshLocation = viewModel::refreshLocationIfPermitted,
+                                onOpenAlerts = { showAlertsSheet = true },
+                                onDismissAlert = viewModel::dismissAlert
                             )
                         }
 
@@ -394,11 +401,28 @@ fun KptcKuwaitApp(
                                 },
                                 onNavigateToRoute = { targetRoute ->
                                     navController.navigate(KptcDestinations.routeDetail(targetRoute))
-                                }
+                                },
+                                onOpenAlerts = { showAlertsSheet = true }
                             )
                         }
                     }
                 }
+            }
+
+            if (showAlertsSheet) {
+                ServiceAlertsNotificationSheet(
+                    allAlerts = uiState.serviceAlerts,
+                    dismissedIds = uiState.dismissedAlertIds,
+                    selectedFilter = uiState.selectedAlertFilter,
+                    language = lang,
+                    onSelectFilter = viewModel::setAlertFilter,
+                    onDismissAlert = viewModel::dismissAlert,
+                    onRestoreAll = viewModel::restoreAllAlerts,
+                    onRouteClick = { routeNum ->
+                        navController.navigate(KptcDestinations.routeDetail(routeNum))
+                    },
+                    onDismissSheet = { showAlertsSheet = false }
+                )
             }
         }
     }

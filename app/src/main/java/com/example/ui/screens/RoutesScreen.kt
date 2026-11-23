@@ -22,13 +22,14 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.ContactPhone
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material3.Card
@@ -56,14 +57,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.R
+import com.example.data.ServiceAlertEngine
 import com.example.model.BusRoute
+import com.example.model.ServiceAlert
+import com.example.model.ServiceAlertType
 import com.example.ui.KptcUiState
 import com.example.ui.RouteFilterTab
 import com.example.ui.components.LanguageSwitchPill
 import com.example.ui.components.RouteBadgePill
+import com.example.ui.components.ServiceAlertBanner
+import com.example.ui.components.ServiceAlertBellButton
 import com.example.ui.components.TelemetryStatusBadge
 import com.example.ui.localization.AppLanguage
 import com.example.ui.localization.AppStrings
+import com.example.ui.theme.DesertGold
 import com.example.ui.theme.ExpressCrimson
 import com.example.ui.theme.KptcRoyalBlue
 import com.example.ui.theme.KuwaitEmerald
@@ -78,6 +85,8 @@ fun RoutesScreen(
     onRouteClick: (String) -> Unit,
     onTrackRouteOnMap: (String) -> Unit,
     onOpenCompanyInfo: () -> Unit = {},
+    onOpenAlerts: () -> Unit = {},
+    onDismissAlert: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val lang = uiState.language
@@ -125,7 +134,13 @@ fun RoutesScreen(
                                     .padding(horizontal = 10.dp, vertical = 4.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        ServiceAlertBellButton(
+                            activeCount = uiState.activeServiceAlerts.size,
+                            language = lang,
+                            onClick = onOpenAlerts
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceVariant,
                             shape = RoundedCornerShape(50),
@@ -137,14 +152,14 @@ fun RoutesScreen(
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
-                                    imageVector = Icons.Default.Business,
+                                    imageVector = Icons.Default.ContactPhone,
                                     contentDescription = AppStrings.companyDetailsTitle(lang),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         LanguageSwitchPill(
                             language = lang,
                             onToggle = onToggleLanguage
@@ -243,6 +258,19 @@ fun RoutesScreen(
                     }
                 }
 
+                // Real-Time Service Alert Banner
+                if (uiState.activeServiceAlerts.isNotEmpty()) {
+                    item {
+                        ServiceAlertBanner(
+                            alerts = uiState.activeServiceAlerts,
+                            language = lang,
+                            onOpenNotifications = onOpenAlerts,
+                            onDismissAlert = onDismissAlert,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
+                }
+
                 // Hero Banner Card (auto-collapses when typing a search query for immediate results)
                 item {
                     AnimatedVisibility(visible = uiState.routeQuery.isBlank()) {
@@ -295,14 +323,20 @@ fun RoutesScreen(
                 // Bus Route Cards
                 items(uiState.filteredRoutes, key = { it.number }) { route ->
                     val liveCount = uiState.liveBuses.count { it.routeNumber == route.number }
+                    val routeAlert = ServiceAlertEngine.alertsForRoute(
+                        route.number,
+                        uiState.activeServiceAlerts
+                    ).firstOrNull()
                     BusRouteCard(
                         route = route,
                         language = lang,
                         liveBusCount = liveCount,
                         isFavorite = route.number in uiState.favoriteRouteNumbers,
+                        activeAlert = routeAlert,
                         onToggleFavorite = { onToggleFavorite(route.number) },
                         onClick = { onRouteClick(route.number) },
                         onTrackLiveClick = { onTrackRouteOnMap(route.number) },
+                        onAlertClick = onOpenAlerts,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
                 }
@@ -392,9 +426,11 @@ private fun BusRouteCard(
     language: AppLanguage,
     liveBusCount: Int,
     isFavorite: Boolean,
+    activeAlert: ServiceAlert?,
     onToggleFavorite: () -> Unit,
     onClick: () -> Unit,
     onTrackLiveClick: () -> Unit,
+    onAlertClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -463,6 +499,44 @@ private fun BusRouteCard(
                         contentDescription = if (isFavorite) "Remove route ${route.number} from saved" else "Save route ${route.number}",
                         tint = if (isFavorite) ExpressCrimson else MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+            }
+
+            if (activeAlert != null) {
+                val alertColor = when (activeAlert.type) {
+                    ServiceAlertType.ROAD_CLOSURE -> ExpressCrimson
+                    ServiceAlertType.DELAY -> DesertGold
+                    ServiceAlertType.MAINTENANCE -> KptcRoyalBlue
+                }
+                Surface(
+                    color = alertColor.copy(alpha = 0.12f),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable(onClick = onAlertClick)
+                        .testTag("route_card_alert_${route.number}")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = AppStrings.alertTypeLabel(activeAlert.type, language),
+                            tint = alertColor,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "${AppStrings.alertTypeLabel(activeAlert.type, language)}: ${AppStrings.alertTitle(activeAlert, language)}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = alertColor,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
 

@@ -86,3 +86,30 @@ data class HighwayPath(
     val points: List<MapPoint>,
     val isMajor: Boolean = true
 )
+
+enum class ServiceAlertType {
+    ROAD_CLOSURE,
+    DELAY,
+    MAINTENANCE
+}
+
+enum class AlertSeverity {
+    HIGH,
+    MEDIUM,
+    INFO
+}
+
+data class ServiceAlert(
+    val id: String,
+    val type: ServiceAlertType,
+    val severity: AlertSeverity,
+    val affectedRouteNumbers: List<String>,
+    val titleEn: String,
+    val titleAr: String,
+    val messageEn: String,
+    val messageAr: String,
+    val corridorEn: String,
+    val corridorAr: String,
+    val delayMinutes: Int? = null,
+    val updatedTimeLabel: String
+)

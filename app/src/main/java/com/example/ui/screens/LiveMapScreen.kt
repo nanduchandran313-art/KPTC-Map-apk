@@ -53,6 +53,8 @@ import com.example.ui.components.KuwaitTransitMap
 import com.example.ui.components.LanguageSwitchPill
 import com.example.ui.components.OccupancyBadge
 import com.example.ui.components.RouteBadgePill
+import com.example.ui.components.ServiceAlertBanner
+import com.example.ui.components.ServiceAlertBellButton
 import com.example.ui.components.TelemetryStatusBadge
 import com.example.ui.localization.AppLanguage
 import com.example.ui.localization.AppStrings
@@ -69,6 +71,8 @@ fun LiveMapScreen(
     onToggleLanguage: () -> Unit,
     onOpenRouteDetail: (String) -> Unit,
     onRefreshLocation: () -> Unit,
+    onOpenAlerts: () -> Unit = {},
+    onDismissAlert: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val lang = uiState.language
@@ -116,7 +120,13 @@ fun LiveMapScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            ServiceAlertBellButton(
+                activeCount = uiState.activeServiceAlerts.size,
+                language = lang,
+                onClick = onOpenAlerts
+            )
+            Spacer(modifier = Modifier.width(6.dp))
             LanguageSwitchPill(language = lang, onToggle = onToggleLanguage)
         }
 
@@ -193,6 +203,23 @@ fun LiveMapScreen(
                     modifier = Modifier.testTag("map_filter_${route.number}")
                 )
             }
+        }
+
+        val mapAlerts = remember(uiState.activeServiceAlerts, focusedRoute) {
+            if (focusedRoute != null) {
+                uiState.activeServiceAlerts.filter { focusedRoute.number in it.affectedRouteNumbers }
+            } else {
+                uiState.activeServiceAlerts
+            }
+        }
+        if (mapAlerts.isNotEmpty()) {
+            ServiceAlertBanner(
+                alerts = mapAlerts,
+                language = lang,
+                onOpenNotifications = onOpenAlerts,
+                onDismissAlert = onDismissAlert,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
         }
 
         // Interactive Kuwait Vector Map + Selection Sheet

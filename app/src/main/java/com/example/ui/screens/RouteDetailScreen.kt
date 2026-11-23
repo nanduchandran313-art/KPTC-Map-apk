@@ -58,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.KuwaitBusData
+import com.example.data.ServiceAlertEngine
 import com.example.model.BusDirection
 import com.example.model.BusRoute
 import com.example.model.BusStop
@@ -68,6 +69,7 @@ import com.example.ui.components.LanguageSwitchPill
 import com.example.ui.components.MetricChip
 import com.example.ui.components.OccupancyBadge
 import com.example.ui.components.RouteBadgePill
+import com.example.ui.components.RouteSpecificAlertCard
 import com.example.ui.localization.AppLanguage
 import com.example.ui.localization.AppStrings
 import com.example.ui.theme.ExpressCrimson
@@ -83,6 +85,7 @@ fun RouteDetailScreen(
     onToggleLanguage: () -> Unit,
     onOpenFullMap: (String) -> Unit,
     onNavigateToRoute: (String) -> Unit,
+    onOpenAlerts: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val lang = uiState.language
@@ -187,6 +190,20 @@ fun RouteDetailScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
+                val routeAlerts = ServiceAlertEngine.alertsForRoute(
+                    routeNumber = route.number,
+                    alerts = uiState.activeServiceAlerts
+                )
+                if (routeAlerts.isNotEmpty()) {
+                    item {
+                        RouteSpecificAlertCard(
+                            alerts = routeAlerts,
+                            language = lang,
+                            onOpenAllAlerts = onOpenAlerts
+                        )
+                    }
+                }
+
                 // Interactive Route Map Card
                 item {
                     Box(
