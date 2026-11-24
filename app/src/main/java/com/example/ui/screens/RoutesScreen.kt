@@ -65,6 +65,7 @@ import com.example.model.ServiceAlertType
 import com.example.ui.KptcUiState
 import com.example.ui.RouteFilterTab
 import com.example.ui.components.KptcPassPromoCard
+import com.example.ui.components.KptcSideFlashAdOverlay
 import com.example.ui.components.LanguageSwitchPill
 import com.example.ui.components.RouteBadgePill
 import com.example.ui.components.ServiceAlertBanner
@@ -354,6 +355,15 @@ fun RoutesScreen(
                 }
             }
         }
+
+        if (uiState.routeQuery.isBlank()) {
+            KptcSideFlashAdOverlay(
+                language = lang,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 12.dp, bottom = 12.dp)
+            )
+        }
     }
 }
 
@@ -378,14 +388,10 @@ private fun KptcHeroCard(
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Image(
-                painter = painterResource(id = R.drawable.img_kptc_main_logo),
-                contentDescription = "KPTC Kuwait Public Transport Company",
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(228.dp)
-                    .background(Color.White)
-                    .padding(horizontal = 6.dp, vertical = 6.dp)
+                painter = painterResource(id = R.drawable.img_kptc_main_hero_closer),
+                contentDescription = "KPTC Kuwait - We're Closer Than You Think",
+                contentScale = ContentScale.FillWidth,
+                modifier = Modifier.fillMaxWidth()
             )
             Column(
                 modifier = Modifier
