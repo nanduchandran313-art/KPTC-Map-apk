@@ -194,6 +194,22 @@ object AppStrings {
     fun shareRouteChooserTitle(lang: AppLanguage) =
         if (isArabic(lang)) "مشاركة خط KPTC عبر" else "Share KPTC Route via"
 
+    // KPTC PASS Promotional Ad Card
+    fun passAdBadge(lang: AppLanguage) =
+        if (isArabic(lang)) "عرض خاص" else "KPTC PASS"
+    fun passAdHeadline(lang: AppLanguage) =
+        if (isArabic(lang)) "توفير التنقل اليومي" else "Unlimited Travel Pass"
+    fun passAdPlansSummary(lang: AppLanguage) =
+        if (isArabic(lang)) "10 د.ك / شهر  •  25 د.ك / 91 يوماً" else "10 KD / 1 Mo  •  25 KD / 91 Days"
+    fun passAdFeaturesLine(lang: AppLanguage) =
+        if (isArabic(lang)) "رحلات غير محدودة • جميع الخطوط (23)" else "Unlimited rides • All 23 routes"
+    fun passAdSubscribeCta(lang: AppLanguage) =
+        if (isArabic(lang)) "اشترك الآن 1880001" else "Subscribe 1880001"
+    fun passAdPosterDesc(lang: AppLanguage) =
+        if (isArabic(lang)) "إعلان بطاقة الاشتراك KPTC PASS" else "KPTC PASS unlimited travel poster"
+    fun passAdCloseAction(lang: AppLanguage) =
+        if (isArabic(lang)) "إغلاق" else "Close"
+
     fun buildRouteShareText(
         route: BusRoute,
         activeAlerts: List<com.example.model.ServiceAlert>,

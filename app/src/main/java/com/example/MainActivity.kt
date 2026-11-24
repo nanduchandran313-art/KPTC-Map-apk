@@ -4,12 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -44,21 +38,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -83,7 +71,6 @@ import com.example.ui.screens.RoutesScreen
 import com.example.ui.screens.StationsScreen
 import com.example.ui.screens.TripPlannerScreen
 import com.example.ui.theme.KptcKuwaitTheme
-import kotlinx.coroutines.delay
 
 object KptcDestinations {
     const val ROUTES = "routes"
@@ -148,59 +135,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             KptcKuwaitTheme {
-                var showOpeningSplash by remember { mutableStateOf(true) }
-
-                LaunchedEffect(Unit) {
-                    delay(1800L)
-                    showOpeningSplash = false
-                }
-
-                Box(modifier = Modifier.fillMaxSize()) {
-                    KptcKuwaitApp()
-
-                    AnimatedVisibility(
-                        visible = showOpeningSplash,
-                        exit = fadeOut(animationSpec = tween(420))
-                    ) {
-                        KptcOpeningLogoSplash()
-                    }
-                }
+                KptcKuwaitApp()
             }
         }
-    }
-}
-
-@Composable
-private fun KptcOpeningLogoSplash() {
-    val alphaAnim = remember { Animatable(0f) }
-
-    LaunchedEffect(Unit) {
-        alphaAnim.animateTo(1f, animationSpec = tween(320))
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                androidx.compose.ui.graphics.Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF11163E),
-                        Color(0xFF191D48),
-                        Color(0xFF231C51)
-                    )
-                )
-            )
-            .testTag("opening_logo_splash"),
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.img_kptc_opening_poster),
-            contentDescription = "KPTC Kuwait Public Transport Company Opening Splash",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .fillMaxSize()
-                .alpha(alphaAnim.value)
-        )
     }
 }
 

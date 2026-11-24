@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import com.example.R
 import com.example.data.KuwaitBusData
 import com.example.ui.KptcUiState
+import com.example.ui.components.KptcPassPromoCard
 import com.example.ui.components.LanguageSwitchPill
 import com.example.ui.localization.AppLanguage
 import com.example.ui.localization.AppStrings
@@ -193,6 +194,11 @@ fun CompanyInfoScreen(
                         }
                     }
                 }
+            }
+
+            // KPTC PASS Advertising Card (medium side poster + subtle animations)
+            item {
+                KptcPassPromoCard(language = lang)
             }
 
             // Contact Us Card

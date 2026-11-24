@@ -63,6 +63,7 @@ import com.example.model.ServiceAlert
 import com.example.model.ServiceAlertType
 import com.example.ui.KptcUiState
 import com.example.ui.RouteFilterTab
+import com.example.ui.components.KptcPassPromoCard
 import com.example.ui.components.LanguageSwitchPill
 import com.example.ui.components.RouteBadgePill
 import com.example.ui.components.ServiceAlertBanner
@@ -280,6 +281,16 @@ fun RoutesScreen(
                             isServiceOperating = uiState.kuwaitClock.isServiceOperating,
                             activeBusCount = uiState.liveBuses.size,
                             routeCount = uiState.allRoutes.size
+                        )
+                    }
+                }
+
+                // KPTC PASS Side Advertising Banner (medium side poster + subtle animations)
+                item {
+                    AnimatedVisibility(visible = uiState.routeQuery.isBlank()) {
+                        KptcPassPromoCard(
+                            language = lang,
+                            modifier = Modifier.padding(horizontal = 16.dp)
                         )
                     }
                 }
