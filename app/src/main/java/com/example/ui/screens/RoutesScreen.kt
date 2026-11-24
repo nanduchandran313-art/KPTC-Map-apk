@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -371,19 +372,20 @@ private fun KptcHeroCard(
             .testTag("kptc_services_hero_card"),
         shape = RoundedCornerShape(22.dp),
         color = Color.White,
+        border = BorderStroke(2.dp, KptcRoyalBlue),
         shadowElevation = 2.dp,
         tonalElevation = 1.dp
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Image(
-                painter = painterResource(id = R.drawable.img_kptc_services_logo),
-                contentDescription = "KPTC Kuwait Public Transport Company Services",
+                painter = painterResource(id = R.drawable.img_kptc_main_logo),
+                contentDescription = "KPTC Kuwait Public Transport Company",
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(225.dp)
-                    .background(Color(0xFFFCFCFC))
-                    .padding(top = 6.dp)
+                    .height(228.dp)
+                    .background(Color.White)
+                    .padding(horizontal = 6.dp, vertical = 6.dp)
             )
             Column(
                 modifier = Modifier

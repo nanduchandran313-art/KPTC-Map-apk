@@ -4,6 +4,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -17,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AltRoute
 import androidx.compose.material.icons.filled.ContactPhone
@@ -35,18 +43,25 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -71,6 +86,8 @@ import com.example.ui.screens.RoutesScreen
 import com.example.ui.screens.StationsScreen
 import com.example.ui.screens.TripPlannerScreen
 import com.example.ui.theme.KptcKuwaitTheme
+import com.example.ui.theme.KptcRoyalBlue
+import kotlinx.coroutines.delay
 
 object KptcDestinations {
     const val ROUTES = "routes"
@@ -135,8 +152,65 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             KptcKuwaitTheme {
-                KptcKuwaitApp()
+                var showOpeningSplash by remember { mutableStateOf(true) }
+
+                LaunchedEffect(Unit) {
+                    delay(1700L)
+                    showOpeningSplash = false
+                }
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    KptcKuwaitApp()
+
+                    AnimatedVisibility(
+                        visible = showOpeningSplash,
+                        exit = fadeOut(animationSpec = tween(400))
+                    ) {
+                        KptcOpeningLogoSplash()
+                    }
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun KptcOpeningLogoSplash() {
+    val alphaAnim = remember { Animatable(0f) }
+    val scaleAnim = remember { Animatable(0.94f) }
+
+    LaunchedEffect(Unit) {
+        alphaAnim.animateTo(1f, animationSpec = tween(320))
+        scaleAnim.animateTo(1f, animationSpec = tween(380))
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .padding(24.dp)
+            .testTag("opening_logo_splash"),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .widthIn(max = 380.dp)
+                .scale(scaleAnim.value)
+                .alpha(alphaAnim.value),
+            shape = RoundedCornerShape(22.dp),
+            color = Color.White,
+            border = BorderStroke(3.dp, KptcRoyalBlue),
+            shadowElevation = 6.dp
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.img_kptc_main_logo),
+                contentDescription = "KPTC Kuwait Public Transport Company",
+                contentScale = ContentScale.FillWidth,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp)
+            )
         }
     }
 }
