@@ -210,6 +210,20 @@ object AppStrings {
     fun passAdCloseAction(lang: AppLanguage) =
         if (isArabic(lang)) "إغلاق" else "Close"
 
+    // KPTC Bus Advertising (Advertise Now) Card
+    fun busAdBadge(lang: AppLanguage) =
+        if (isArabic(lang)) "أعلن الآن" else "ADVERTISE NOW"
+    fun busAdHeadline(lang: AppLanguage) =
+        if (isArabic(lang)) "أعلن على باصات KPTC" else "Advertise on KPTC Buses"
+    fun busAdSubheadline(lang: AppLanguage) =
+        if (isArabic(lang)) "اجعل علامتك تصل لجميع ركاب الكويت" else "Reach daily commuters across Kuwait"
+    fun busAdFeaturesLine(lang: AppLanguage) =
+        if (isArabic(lang)) "احجز مساحتك الإعلانية على الحافلات" else "Rent premium bus ad space"
+    fun busAdCta(lang: AppLanguage) =
+        if (isArabic(lang)) "احجز الآن 1880001" else "Book Ad 1880001"
+    fun busAdPosterDesc(lang: AppLanguage) =
+        if (isArabic(lang)) "ملصق أعلن الآن على باصات KPTC" else "KPTC Advertise Now bus wrap poster"
+
     fun buildRouteShareText(
         route: BusRoute,
         activeAlerts: List<com.example.model.ServiceAlert>,

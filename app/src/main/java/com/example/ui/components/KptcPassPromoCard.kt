@@ -4,13 +4,21 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.annotation.DrawableRes
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,6 +40,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ConfirmationNumber
@@ -45,7 +54,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,6 +68,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -68,10 +80,27 @@ import androidx.compose.ui.window.Dialog
 import com.example.R
 import com.example.ui.localization.AppLanguage
 import com.example.ui.localization.AppStrings
+import kotlinx.coroutines.delay
 
 private val PassDeepIndigo = Color(0xFF151946)
 private val PassRoyalViolet = Color(0xFF28205C)
+private val AdSkyNavy = Color(0xFF132D5E)
+private val AdBlueAccent = Color(0xFF1E4C8F)
 private val PassAmberGold = Color(0xFFFFC107)
+
+private data class PromoAdSlide(
+    val id: String,
+    @DrawableRes val imageRes: Int,
+    val badgeIcon: ImageVector,
+    val badgeText: String,
+    val headline: String,
+    val subheadline: String,
+    val featureLine: String,
+    val ctaText: String,
+    val contentDesc: String,
+    val startColor: Color,
+    val endColor: Color
+)
 
 @Composable
 fun KptcPassPromoCard(
@@ -79,7 +108,44 @@ fun KptcPassPromoCard(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    var showFullPosterDialog by remember { mutableStateOf(false) }
+    var activeSlideIndex by remember { mutableIntStateOf(0) }
+    var dialogSlideIndex by remember { mutableStateOf<Int?>(null) }
+
+    val slides = listOf(
+        PromoAdSlide(
+            id = "kptc_pass",
+            imageRes = R.drawable.img_kptc_opening_poster,
+            badgeIcon = Icons.Default.ConfirmationNumber,
+            badgeText = AppStrings.passAdBadge(language),
+            headline = AppStrings.passAdHeadline(language),
+            subheadline = AppStrings.passAdPlansSummary(language),
+            featureLine = AppStrings.passAdFeaturesLine(language),
+            ctaText = AppStrings.passAdSubscribeCta(language),
+            contentDesc = AppStrings.passAdPosterDesc(language),
+            startColor = PassDeepIndigo,
+            endColor = PassRoyalViolet
+        ),
+        PromoAdSlide(
+            id = "advertise_now",
+            imageRes = R.drawable.img_kptc_advertise_now_poster,
+            badgeIcon = Icons.Default.Campaign,
+            badgeText = AppStrings.busAdBadge(language),
+            headline = AppStrings.busAdHeadline(language),
+            subheadline = AppStrings.busAdSubheadline(language),
+            featureLine = AppStrings.busAdFeaturesLine(language),
+            ctaText = AppStrings.busAdCta(language),
+            contentDesc = AppStrings.busAdPosterDesc(language),
+            startColor = AdSkyNavy,
+            endColor = AdBlueAccent
+        )
+    )
+
+    LaunchedEffect(activeSlideIndex, dialogSlideIndex) {
+        if (dialogSlideIndex == null) {
+            delay(4_800L)
+            activeSlideIndex = (activeSlideIndex + 1) % slides.size
+        }
+    }
 
     val infiniteTransition = rememberInfiniteTransition(label = "kptc_pass_ad")
 
@@ -122,14 +188,16 @@ fun KptcPassPromoCard(
         }
     }
 
+    val currentSlide = slides[activeSlideIndex]
+
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { showFullPosterDialog = true }
+            .clickable { dialogSlideIndex = activeSlideIndex }
             .testTag("kptc_pass_ad_card"),
         shape = RoundedCornerShape(20.dp),
         border = BorderStroke(1.dp, PassAmberGold.copy(alpha = 0.38f)),
-        colors = CardDefaults.cardColors(containerColor = PassDeepIndigo),
+        colors = CardDefaults.cardColors(containerColor = currentSlide.startColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Box(
@@ -137,7 +205,7 @@ fun KptcPassPromoCard(
                 .fillMaxWidth()
                 .background(
                     Brush.horizontalGradient(
-                        colors = listOf(PassDeepIndigo, PassRoyalViolet)
+                        colors = listOf(currentSlide.startColor, currentSlide.endColor)
                     )
                 )
                 .drawWithContent {
@@ -157,137 +225,189 @@ fun KptcPassPromoCard(
                     )
                 }
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Medium side poster image with subtle floating animation
-                Surface(
-                    modifier = Modifier
-                        .width(102.dp)
-                        .height(132.dp)
-                        .graphicsLayer { translationY = floatOffsetY }
-                        .testTag("kptc_pass_ad_side_image"),
-                    shape = RoundedCornerShape(14.dp),
-                    border = BorderStroke(1.5.dp, PassAmberGold.copy(alpha = 0.55f)),
-                    shadowElevation = 4.dp,
-                    color = PassDeepIndigo
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.img_kptc_opening_poster),
-                        contentDescription = AppStrings.passAdPosterDesc(language),
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-
-                // Promotional details + animated badge + Subscribe Hotline button
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Surface(
-                        color = PassAmberGold.copy(alpha = badgePulseAlpha),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ConfirmationNumber,
-                                contentDescription = null,
-                                tint = PassDeepIndigo,
-                                modifier = Modifier.size(13.dp)
+            Column(modifier = Modifier.fillMaxWidth()) {
+                AnimatedContent(
+                    targetState = activeSlideIndex,
+                    transitionSpec = {
+                        (slideInHorizontally(animationSpec = tween(360)) { fullWidth -> fullWidth / 4 } +
+                            fadeIn(animationSpec = tween(360)))
+                            .togetherWith(
+                                slideOutHorizontally(animationSpec = tween(260)) { fullWidth -> -fullWidth / 4 } +
+                                    fadeOut(animationSpec = tween(260))
                             )
-                            Text(
-                                text = AppStrings.passAdBadge(language),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = PassDeepIndigo
+                    },
+                    label = "promo_ad_slide"
+                ) { slideIndex ->
+                    val slide = slides[slideIndex]
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Medium side poster image with subtle floating animation
+                        Surface(
+                            modifier = Modifier
+                                .width(102.dp)
+                                .height(132.dp)
+                                .graphicsLayer { translationY = floatOffsetY }
+                                .testTag("kptc_pass_ad_side_image_${slide.id}"),
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(1.5.dp, PassAmberGold.copy(alpha = 0.55f)),
+                            shadowElevation = 4.dp,
+                            color = slide.startColor
+                        ) {
+                            Image(
+                                painter = painterResource(id = slide.imageRes),
+                                contentDescription = slide.contentDesc,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
+
+                        // Promotional details + animated badge + Subscribe / Book Ad button
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            Surface(
+                                color = PassAmberGold.copy(alpha = badgePulseAlpha),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = slide.badgeIcon,
+                                        contentDescription = null,
+                                        tint = slide.startColor,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Text(
+                                        text = slide.badgeText,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = slide.startColor
+                                    )
+                                }
+                            }
+
+                            Text(
+                                text = slide.headline,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+
+                            Text(
+                                text = slide.subheadline,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = PassAmberGold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = PassAmberGold.copy(alpha = 0.9f),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text(
+                                    text = slide.featureLine,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White.copy(alpha = 0.88f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(2.dp))
+
+                            Button(
+                                onClick = dialHotline,
+                                shape = RoundedCornerShape(50),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = PassAmberGold,
+                                    contentColor = slide.startColor
+                                ),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                                modifier = Modifier
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .testTag("kptc_pass_ad_subscribe_btn")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Call,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = slide.ctaText,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
                     }
+                }
 
-                    Text(
-                        text = AppStrings.passAdHeadline(language),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Text(
-                        text = AppStrings.passAdPlansSummary(language),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = PassAmberGold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = PassAmberGold.copy(alpha = 0.9f),
-                            modifier = Modifier.size(14.dp)
+                // Interactive animated indicator dots to switch between both ads
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp, top = 2.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    slides.forEachIndexed { idx, slide ->
+                        val isSelected = idx == activeSlideIndex
+                        val pillWidth by animateDpAsState(
+                            targetValue = if (isSelected) 24.dp else 8.dp,
+                            animationSpec = tween(250),
+                            label = "ad_dot_width"
                         )
-                        Text(
-                            text = AppStrings.passAdFeaturesLine(language),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.88f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    Button(
-                        onClick = dialHotline,
-                        shape = RoundedCornerShape(50),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = PassAmberGold,
-                            contentColor = PassDeepIndigo
-                        ),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                        modifier = Modifier
-                            .defaultMinSize(minHeight = 48.dp)
-                            .testTag("kptc_pass_ad_subscribe_btn")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Call,
-                            contentDescription = null,
-                            modifier = Modifier.size(15.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = AppStrings.passAdSubscribeCta(language),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .clickable { activeSlideIndex = idx }
+                                .padding(horizontal = 6.dp, vertical = 6.dp)
+                                .testTag("kptc_ad_dot_${slide.id}")
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(pillWidth)
+                                    .height(7.dp)
+                                    .clip(RoundedCornerShape(50))
+                                    .background(
+                                        if (isSelected) PassAmberGold else Color.White.copy(alpha = 0.35f)
+                                    )
+                            )
+                        }
                     }
                 }
             }
         }
     }
 
-    if (showFullPosterDialog) {
-        Dialog(onDismissRequest = { showFullPosterDialog = false }) {
+    dialogSlideIndex?.let { index ->
+        val modalSlide = slides[index]
+        Dialog(onDismissRequest = { dialogSlideIndex = null }) {
             Card(
                 shape = RoundedCornerShape(22.dp),
-                colors = CardDefaults.cardColors(containerColor = PassDeepIndigo),
+                colors = CardDefaults.cardColors(containerColor = modalSlide.startColor),
                 border = BorderStroke(1.dp, PassAmberGold.copy(alpha = 0.4f))
             ) {
                 Column(
@@ -301,14 +421,18 @@ fun KptcPassPromoCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = AppStrings.passAdHeadline(language),
+                            text = modalSlide.headline,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
-                            modifier = Modifier.padding(start = 6.dp)
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 6.dp)
                         )
                         IconButton(
-                            onClick = { showFullPosterDialog = false },
+                            onClick = { dialogSlideIndex = null },
                             modifier = Modifier
                                 .size(48.dp)
                                 .clip(CircleShape)
@@ -323,8 +447,8 @@ fun KptcPassPromoCard(
                     }
 
                     Image(
-                        painter = painterResource(id = R.drawable.img_kptc_opening_poster),
-                        contentDescription = AppStrings.passAdPosterDesc(language),
+                        painter = painterResource(id = modalSlide.imageRes),
+                        contentDescription = modalSlide.contentDesc,
                         contentScale = ContentScale.Fit,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -337,7 +461,7 @@ fun KptcPassPromoCard(
                         shape = RoundedCornerShape(50),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = PassAmberGold,
-                            contentColor = PassDeepIndigo
+                            contentColor = modalSlide.startColor
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -350,7 +474,7 @@ fun KptcPassPromoCard(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = AppStrings.passAdSubscribeCta(language),
+                            text = modalSlide.ctaText,
                             fontWeight = FontWeight.Bold
                         )
                     }
