@@ -172,6 +172,89 @@ fun StationsScreen(
                 }
             }
 
+            // Closest Bus Stops to Current GPS Location
+            if (uiState.closestStops.isNotEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("stations_closest_gps_card"),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = KuwaitEmerald.copy(alpha = 0.09f)
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.MyLocation,
+                                    contentDescription = null,
+                                    tint = KuwaitEmerald,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = AppStrings.closestStopsOverlayTitle(lang),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = KuwaitEmerald
+                                )
+                            }
+                            uiState.closestStops.take(3).forEach { nearby ->
+                                val routes = KuwaitBusData.routesServingStop(nearby.stop.id)
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.surface,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = AppStrings.stopName(nearby.stop, lang),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.SemiBold,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            if (routes.isNotEmpty()) {
+                                                Text(
+                                                    text = routes.take(5).joinToString(" • ") { it.number },
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
+                                        Surface(
+                                            color = KuwaitEmerald.copy(alpha = 0.14f),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Text(
+                                                text = LocationHelper.formatDistance(nearby.distanceKm),
+                                                style = MaterialTheme.typography.labelMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = KuwaitEmerald,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // Station Search Input
             item {
                 OutlinedTextField(

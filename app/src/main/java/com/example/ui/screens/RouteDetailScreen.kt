@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Card
@@ -53,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -89,6 +92,7 @@ fun RouteDetailScreen(
     modifier: Modifier = Modifier
 ) {
     val lang = uiState.language
+    val context = LocalContext.current
     val route = KuwaitBusData.routesByNumber[routeNumber]
     if (route == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -110,10 +114,28 @@ fun RouteDetailScreen(
     val allRouteBuses = remember(uiState.liveBuses, route.number) {
         uiState.liveBuses.filter { it.routeNumber == route.number }
     }
+    val routeAlerts = remember(uiState.activeServiceAlerts, route.number) {
+        ServiceAlertEngine.alertsForRoute(
+            routeNumber = route.number,
+            alerts = uiState.activeServiceAlerts
+        )
+    }
     val isFavorite = route.number in uiState.favoriteRouteNumbers
 
     val originText = AppStrings.routeOrigin(route, lang)
     val destText = AppStrings.routeDestination(route, lang)
+
+    val shareRoute: () -> Unit = {
+        val shareText = AppStrings.buildRouteShareText(route, routeAlerts, lang)
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "KPTC Route ${route.number}")
+            putExtra(Intent.EXTRA_TEXT, shareText)
+        }
+        context.startActivity(
+            Intent.createChooser(sendIntent, AppStrings.shareRouteChooserTitle(lang))
+        )
+    }
 
     Scaffold(
         modifier = modifier,
@@ -161,6 +183,16 @@ fun RouteDetailScreen(
                         onToggle = onToggleLanguage
                     )
                     IconButton(
+                        onClick = shareRoute,
+                        modifier = Modifier.testTag("route_detail_share")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = AppStrings.shareRouteDescription(lang),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    IconButton(
                         onClick = { onToggleFavorite(route.number) },
                         modifier = Modifier.testTag("route_detail_favorite")
                     ) {
@@ -190,10 +222,6 @@ fun RouteDetailScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                val routeAlerts = ServiceAlertEngine.alertsForRoute(
-                    routeNumber = route.number,
-                    alerts = uiState.activeServiceAlerts
-                )
                 if (routeAlerts.isNotEmpty()) {
                     item {
                         RouteSpecificAlertCard(

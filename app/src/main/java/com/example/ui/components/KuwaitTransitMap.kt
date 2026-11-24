@@ -75,6 +75,8 @@ fun KuwaitTransitMap(
     selectedBusId: String?,
     selectedStopId: String?,
     userCoordinates: UserCoordinates?,
+    closestStopIds: Set<String> = emptySet(),
+    centerOnUserTrigger: Int = 0,
     onBusTapped: (LiveBus) -> Unit,
     onStopTapped: (BusStop) -> Unit,
     onLocationButtonClick: (() -> Unit)? = null,
@@ -121,6 +123,20 @@ fun KuwaitTransitMap(
         } else if (focusedRoute == null) {
             zoom = 1.15f
             panOffset = Offset.Zero
+        }
+    }
+
+    // Center map around user's GPS location when requested
+    LaunchedEffect(centerOnUserTrigger) {
+        if (centerOnUserTrigger > 0 && userCoordinates != null && canvasSize.width > 0f && canvasSize.height > 0f) {
+            val targetZoom = zoom.coerceAtLeast(2.4f)
+            val baseUser = projectToBase(userCoordinates.latitude, userCoordinates.longitude, canvasSize)
+            val screenCenter = Offset(canvasSize.width / 2f, canvasSize.height / 2f)
+            zoom = targetZoom
+            panOffset = Offset(
+                x = (screenCenter.x - baseUser.x) * targetZoom,
+                y = (screenCenter.y - baseUser.y) * targetZoom
+            )
         }
     }
 
@@ -296,14 +312,24 @@ fun KuwaitTransitMap(
                 if (p.x < -60f || p.x > size.width + 60f || p.y < -60f || p.y > size.height + 60f) return@forEachIndexed
 
                 val isSelected = stop.id == selectedStopId
+                val isClosest = stop.id in closestStopIds
                 val isTerminal = focusedRoute != null &&
                     (stop.id == focusedRoute.stops.firstOrNull()?.id || stop.id == focusedRoute.stops.lastOrNull()?.id)
 
                 val radius = when {
                     isSelected -> 11f
+                    isClosest -> 9.5f
                     isTerminal -> 9f
                     focusedRoute != null -> 6.5f
                     else -> 4.2f
+                }
+
+                if (isClosest && !isSelected) {
+                    drawCircle(
+                        color = KuwaitEmerald.copy(alpha = 0.25f),
+                        radius = radius + 8f,
+                        center = p
+                    )
                 }
 
                 drawCircle(
@@ -314,6 +340,7 @@ fun KuwaitTransitMap(
                 drawCircle(
                     color = when {
                         isSelected -> DesertGold
+                        isClosest -> KuwaitEmerald
                         isTerminal -> focusedRoute?.badgeColor ?: KptcRoyalBlue
                         focusedRoute != null -> focusedRoute.badgeColor
                         else -> KptcRoyalBlue
@@ -322,7 +349,7 @@ fun KuwaitTransitMap(
                     center = p
                 )
 
-                val showStopLabel = isSelected || isTerminal || (focusedRoute != null && (zoom >= 1.5f || idx % 2 == 0)) ||
+                val showStopLabel = isSelected || isClosest || isTerminal || (focusedRoute != null && (zoom >= 1.5f || idx % 2 == 0)) ||
                     (focusedRoute == null && stop.id in MAJOR_HUB_IDS && zoom >= 1.0f)
 
                 if (showStopLabel) {

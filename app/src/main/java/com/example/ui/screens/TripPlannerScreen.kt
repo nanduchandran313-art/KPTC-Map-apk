@@ -1,5 +1,9 @@
 package com.example.ui.screens
 
+import android.Manifest
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,13 +25,17 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.AltRoute
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -61,12 +69,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.KuwaitBusData
+import com.example.data.TripEndpointPoint
 import com.example.data.TripItinerary
+import com.example.data.TripPlannerEngine
+import com.example.location.LocationHelper
 import com.example.model.BusStop
 import com.example.ui.KptcUiState
 import com.example.ui.components.LanguageSwitchPill
@@ -104,6 +117,8 @@ fun TripPlannerScreen(
     uiState: KptcUiState,
     onSelectStartStop: (BusStop) -> Unit,
     onSelectEndStop: (BusStop) -> Unit,
+    onResolveCustomQuery: (Boolean, String, (Boolean) -> Unit) -> Unit = { _, _, cb -> cb(false) },
+    onUseGpsOrigin: () -> Unit = {},
     onSwapStops: () -> Unit,
     onApplyQuickTrip: (String, String) -> Unit,
     onToggleLanguage: () -> Unit,
@@ -114,8 +129,32 @@ fun TripPlannerScreen(
     modifier: Modifier = Modifier
 ) {
     val lang = uiState.language
+    val context = LocalContext.current
     var pickingEndpoint by remember { mutableStateOf(PickingEndpoint.NONE) }
     var stationSearchQuery by remember { mutableStateOf("") }
+
+    val gpsOriginPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { perms ->
+        val granted = perms[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            perms[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (granted) {
+            onUseGpsOrigin()
+        }
+    }
+
+    val triggerGpsOrigin: () -> Unit = {
+        if (LocationHelper.hasLocationPermission(context)) {
+            onUseGpsOrigin()
+        } else {
+            gpsOriginPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
 
     val openPicker: (PickingEndpoint) -> Unit = { target ->
         stationSearchQuery = ""
@@ -206,51 +245,92 @@ fun TripPlannerScreen(
                     ),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            EndpointSelectorBox(
-                                label = AppStrings.startPointLabel(lang),
-                                selectedStop = uiState.tripStartStop,
-                                placeholder = AppStrings.chooseStartHint(lang),
-                                indicatorColor = KuwaitEmerald,
-                                isStart = true,
-                                language = lang,
-                                onClick = { openPicker(PickingEndpoint.START) },
-                                modifier = Modifier.testTag("planner_start_selector")
-                            )
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                EndpointSelectorBox(
+                                    label = AppStrings.startPointLabel(lang),
+                                    selectedEndpoint = uiState.tripStartEndpoint,
+                                    placeholder = AppStrings.chooseStartHint(lang),
+                                    indicatorColor = KuwaitEmerald,
+                                    isStart = true,
+                                    language = lang,
+                                    onClick = { openPicker(PickingEndpoint.START) },
+                                    modifier = Modifier.testTag("planner_start_selector")
+                                )
 
-                            EndpointSelectorBox(
-                                label = AppStrings.destinationPointLabel(lang),
-                                selectedStop = uiState.tripEndStop,
-                                placeholder = AppStrings.chooseDestHint(lang),
-                                indicatorColor = ExpressCrimson,
-                                isStart = false,
-                                language = lang,
-                                onClick = { openPicker(PickingEndpoint.DESTINATION) },
-                                modifier = Modifier.testTag("planner_dest_selector")
-                            )
+                                EndpointSelectorBox(
+                                    label = AppStrings.destinationPointLabel(lang),
+                                    selectedEndpoint = uiState.tripEndEndpoint,
+                                    placeholder = AppStrings.chooseDestHint(lang),
+                                    indicatorColor = ExpressCrimson,
+                                    isStart = false,
+                                    language = lang,
+                                    onClick = { openPicker(PickingEndpoint.DESTINATION) },
+                                    modifier = Modifier.testTag("planner_dest_selector")
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            FilledTonalIconButton(
+                                onClick = onSwapStops,
+                                enabled = uiState.tripStartEndpoint != null || uiState.tripEndEndpoint != null,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .testTag("planner_swap_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.SwapVert,
+                                    contentDescription = "Swap start and destination points"
+                                )
+                            }
                         }
 
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        FilledTonalIconButton(
-                            onClick = onSwapStops,
-                            enabled = uiState.tripStartStop != null || uiState.tripEndStop != null,
-                            modifier = Modifier
-                                .size(48.dp)
-                                .testTag("planner_swap_button")
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.SwapVert,
-                                contentDescription = "Swap start and destination stations"
+                            AssistChip(
+                                onClick = triggerGpsOrigin,
+                                label = {
+                                    Text(
+                                        text = AppStrings.useMyGpsLabel(lang),
+                                        maxLines = 1
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.MyLocation,
+                                        contentDescription = AppStrings.useMyGpsLabel(lang),
+                                        modifier = Modifier.size(16.dp),
+                                        tint = KuwaitEmerald
+                                    )
+                                },
+                                modifier = Modifier
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .testTag("planner_use_gps_origin")
+                            )
+
+                            Text(
+                                text = AppStrings.addressOrCoordsPlaceholder(lang),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
                             )
                         }
                     }
@@ -297,11 +377,25 @@ fun TripPlannerScreen(
             }
 
             // Results Section
-            val startStop = uiState.tripStartStop
-            val endStop = uiState.tripEndStop
+            val startEndpoint = uiState.tripStartEndpoint
+            val endEndpoint = uiState.tripEndEndpoint
+            val isSamePoint = if (startEndpoint != null && endEndpoint != null) {
+                if (startEndpoint.exactStop != null && endEndpoint.exactStop != null) {
+                    startEndpoint.exactStop.id == endEndpoint.exactStop.id
+                } else {
+                    LocationHelper.haversineKm(
+                        startEndpoint.latitude,
+                        startEndpoint.longitude,
+                        endEndpoint.latitude,
+                        endEndpoint.longitude
+                    ) < 0.03
+                }
+            } else {
+                false
+            }
 
             when {
-                startStop == null || endStop == null -> {
+                startEndpoint == null || endEndpoint == null -> {
                     item {
                         PlannerNoticeCard(
                             icon = Icons.Default.DirectionsBus,
@@ -313,12 +407,12 @@ fun TripPlannerScreen(
                     }
                 }
 
-                startStop.id == endStop.id -> {
+                isSamePoint -> {
                     item {
                         PlannerNoticeCard(
                             icon = Icons.Default.SwapHoriz,
                             iconTint = DesertGold,
-                            title = AppStrings.stopName(startStop, lang),
+                            title = if (AppStrings.isArabic(lang)) startEndpoint.labelAr else startEndpoint.labelEn,
                             description = AppStrings.sameStopWarning(lang),
                             modifier = Modifier.testTag("planner_same_stop_warning")
                         )
@@ -363,7 +457,7 @@ fun TripPlannerScreen(
         }
     }
 
-    // Station Picker Modal Bottom Sheet
+    // Station / Address / Coordinate Picker Modal Bottom Sheet
     if (pickingEndpoint != PickingEndpoint.NONE) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         val trimmed = stationSearchQuery.trim().lowercase()
@@ -379,6 +473,25 @@ fun TripPlannerScreen(
                         KuwaitBusData.routesServingStop(stop.id).any {
                             it.number.lowercase().contains(trimmed)
                         }
+                }
+            }
+        }
+        val canSubmitCustomQuery = stationSearchQuery.trim().length >= 2 ||
+            TripPlannerEngine.parseCoordinates(stationSearchQuery) != null
+
+        val submitCustomQuery: () -> Unit = {
+            val q = stationSearchQuery.trim()
+            if (q.length >= 2) {
+                onResolveCustomQuery(pickingEndpoint == PickingEndpoint.START, q) { resolvedOk ->
+                    if (resolvedOk) {
+                        pickingEndpoint = PickingEndpoint.NONE
+                    } else {
+                        Toast.makeText(
+                            context,
+                            AppStrings.addressNotResolvedWarning(lang),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
             }
         }
@@ -412,7 +525,7 @@ fun TripPlannerScreen(
                         .testTag("planner_station_search"),
                     placeholder = {
                         Text(
-                            text = AppStrings.searchStationsPlaceholder(lang),
+                            text = AppStrings.addressOrCoordsPlaceholder(lang),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -420,7 +533,7 @@ fun TripPlannerScreen(
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
-                            contentDescription = "Search Kuwait stations",
+                            contentDescription = "Search Kuwait stations, addresses, or coordinates",
                             tint = MaterialTheme.colorScheme.primary
                         )
                     },
@@ -435,6 +548,8 @@ fun TripPlannerScreen(
                         }
                     },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { submitCustomQuery() }),
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -442,10 +557,79 @@ fun TripPlannerScreen(
                     )
                 )
 
+                if (pickingEndpoint == PickingEndpoint.START) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .defaultMinSize(minHeight = 48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable {
+                                triggerGpsOrigin()
+                                pickingEndpoint = PickingEndpoint.NONE
+                            }
+                            .testTag("picker_use_gps_option"),
+                        shape = RoundedCornerShape(12.dp),
+                        color = KuwaitEmerald.copy(alpha = 0.12f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MyLocation,
+                                contentDescription = AppStrings.currentGpsPointLabel(lang),
+                                tint = KuwaitEmerald,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = AppStrings.currentGpsPointLabel(lang),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = KuwaitEmerald,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+
+                if (canSubmitCustomQuery) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .defaultMinSize(minHeight = 48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable(onClick = submitCustomQuery)
+                            .testTag("picker_use_custom_location"),
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = AppStrings.useCustomLocationAction(stationSearchQuery.trim(), lang),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(420.dp),
+                        .height(380.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(vertical = 4.dp)
                 ) {
@@ -517,7 +701,7 @@ fun TripPlannerScreen(
 @Composable
 private fun EndpointSelectorBox(
     label: String,
-    selectedStop: BusStop?,
+    selectedEndpoint: TripEndpointPoint?,
     placeholder: String,
     indicatorColor: Color,
     isStart: Boolean,
@@ -525,6 +709,18 @@ private fun EndpointSelectorBox(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val primaryText = when {
+        selectedEndpoint == null -> placeholder
+        selectedEndpoint.isGps -> AppStrings.currentGpsPointLabel(language)
+        AppStrings.isArabic(language) -> selectedEndpoint.labelAr
+        else -> selectedEndpoint.labelEn
+    }
+    val secondaryText = when {
+        selectedEndpoint == null -> null
+        selectedEndpoint.exactStop != null -> selectedEndpoint.exactStop.area
+        else -> String.format("%.4f, %.4f", selectedEndpoint.latitude, selectedEndpoint.longitude)
+    }
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -549,7 +745,11 @@ private fun EndpointSelectorBox(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = if (isStart) Icons.Default.TripOrigin else Icons.Default.LocationOn,
+                    imageVector = when {
+                        selectedEndpoint?.isGps == true -> Icons.Default.MyLocation
+                        isStart -> Icons.Default.TripOrigin
+                        else -> Icons.Default.LocationOn
+                    },
                     contentDescription = label,
                     tint = indicatorColor,
                     modifier = Modifier.size(16.dp)
@@ -562,16 +762,16 @@ private fun EndpointSelectorBox(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = if (selectedStop != null) AppStrings.stopName(selectedStop, language) else placeholder,
+                    text = primaryText,
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = if (selectedStop != null) FontWeight.SemiBold else FontWeight.Normal,
-                    color = if (selectedStop != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = if (selectedEndpoint != null) FontWeight.SemiBold else FontWeight.Normal,
+                    color = if (selectedEndpoint != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (selectedStop != null) {
+                if (secondaryText != null) {
                     Text(
-                        text = selectedStop.area,
+                        text = secondaryText,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -759,8 +959,40 @@ private fun TripItineraryCard(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-            // Leg-by-leg boarding instructions
+            // Leg-by-leg boarding instructions & walking guidance
+            val lastLeg = itinerary.legs.last()
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (itinerary.originWalkMeters > 0) {
+                    Surface(
+                        color = KuwaitEmerald.copy(alpha = 0.10f),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.DirectionsWalk,
+                                contentDescription = null,
+                                tint = KuwaitEmerald,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = AppStrings.walkToBoardStop(
+                                    meters = itinerary.originWalkMeters,
+                                    stopName = AppStrings.stopName(firstLeg.fromStop, language),
+                                    lang = language
+                                ),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = KuwaitEmerald,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+
                 itinerary.legs.forEachIndexed { index, leg ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -819,6 +1051,37 @@ private fun TripItineraryCard(
                                     fontWeight = FontWeight.Bold
                                 )
                             }
+                        }
+                    }
+                }
+
+                if (itinerary.destWalkMeters > 0) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.DirectionsWalk,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = AppStrings.walkFromAlightStop(
+                                    meters = itinerary.destWalkMeters,
+                                    stopName = AppStrings.stopName(lastLeg.toStop, language),
+                                    lang = language
+                                ),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
                 }

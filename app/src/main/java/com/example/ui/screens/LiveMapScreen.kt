@@ -3,17 +3,20 @@ package com.example.ui.screens
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -34,9 +38,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -77,11 +86,31 @@ fun LiveMapScreen(
 ) {
     val lang = uiState.language
     val context = LocalContext.current
+    var centerOnUserTrigger by remember { mutableIntStateOf(0) }
+    var showClosestOverlay by remember { mutableStateOf(true) }
+
     val locationLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { grants ->
         if (grants.values.any { it }) {
             onRefreshLocation()
+            centerOnUserTrigger++
+            showClosestOverlay = true
+        }
+    }
+
+    val requestOrRefreshGps: () -> Unit = {
+        if (LocationHelper.hasLocationPermission(context)) {
+            onRefreshLocation()
+            centerOnUserTrigger++
+            showClosestOverlay = true
+        } else {
+            locationLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
         }
     }
 
@@ -93,6 +122,9 @@ fun LiveMapScreen(
     }
     val selectedStop: BusStop? = remember(uiState.selectedMapStopId) {
         uiState.selectedMapStopId?.let { KuwaitBusData.stopsMap[it] }
+    }
+    val closestStopIds = remember(uiState.closestStops) {
+        uiState.closestStops.take(3).map { it.stop.id }.toSet()
     }
 
     Column(
@@ -236,22 +268,93 @@ fun LiveMapScreen(
                 selectedBusId = uiState.selectedMapBusId,
                 selectedStopId = uiState.selectedMapStopId,
                 userCoordinates = uiState.userCoordinates,
+                closestStopIds = closestStopIds,
+                centerOnUserTrigger = centerOnUserTrigger,
                 onBusTapped = { bus -> onSelectBus(bus.busId) },
                 onStopTapped = { stop -> onSelectStop(stop.id) },
-                onLocationButtonClick = {
-                    if (LocationHelper.hasLocationPermission(context)) {
-                        onRefreshLocation()
-                    } else {
-                        locationLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                            )
-                        )
-                    }
-                },
+                onLocationButtonClick = requestOrRefreshGps,
                 modifier = Modifier.fillMaxSize()
             )
+
+            // Top-Right Closest Bus Stops Overlay Chip / Toggle
+            if (uiState.userCoordinates == null) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(10.dp)
+                        .defaultMinSize(minHeight = 40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(onClick = requestOrRefreshGps)
+                        .testTag("map_enable_gps_overlay"),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.94f),
+                    shape = RoundedCornerShape(12.dp),
+                    tonalElevation = 3.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MyLocation,
+                            contentDescription = AppStrings.enableGpsOverlayCta(lang),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Text(
+                            text = AppStrings.enableGpsOverlayCta(lang),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+            } else if (!showClosestOverlay && selectedBus == null && selectedStop == null) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(10.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { showClosestOverlay = true }
+                        .testTag("map_show_closest_chip"),
+                    color = KuwaitEmerald.copy(alpha = 0.92f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = androidx.compose.ui.graphics.Color.White,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Text(
+                            text = AppStrings.closestStopsOverlayTitle(lang),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = androidx.compose.ui.graphics.Color.White
+                        )
+                    }
+                }
+            }
+
+            // Closest Bus Stops GPS Overlay Card (when GPS available & no bus/stop sheet open)
+            androidx.compose.animation.AnimatedVisibility(
+                visible = uiState.closestStops.isNotEmpty() && showClosestOverlay && selectedBus == null && selectedStop == null,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 10.dp, end = 68.dp, bottom = 10.dp)
+            ) {
+                ClosestStopsMapOverlayCard(
+                    closestStops = uiState.closestStops.take(3),
+                    language = lang,
+                    onStopClick = { stop -> onSelectStop(stop.id) },
+                    onDismiss = { showClosestOverlay = false }
+                )
+            }
 
             // Selected Live Bus Overlay Card
             androidx.compose.animation.AnimatedVisibility(
@@ -485,6 +588,115 @@ private fun StationOverlayCard(
                                 fontWeight = FontWeight.Bold
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ClosestStopsMapOverlayCard(
+    closestStops: List<com.example.location.NearbyBusStop>,
+    language: AppLanguage,
+    onStopClick: (BusStop) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .widthIn(max = 320.dp)
+            .testTag("map_closest_stops_overlay"),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MyLocation,
+                        contentDescription = null,
+                        tint = KuwaitEmerald,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = AppStrings.closestStopsOverlayTitle(language),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = KuwaitEmerald,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Hide closest stops overlay",
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
+            closestStops.forEach { nearby ->
+                val servingRoutes = KuwaitBusData.routesServingStop(nearby.stop.id)
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable { onStopClick(nearby.stop) }
+                        .testTag("map_closest_stop_${nearby.stop.id}")
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp, vertical = 7.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = AppStrings.stopName(nearby.stop, language),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            if (servingRoutes.isNotEmpty()) {
+                                Text(
+                                    text = servingRoutes.take(4).joinToString(" • ") { it.number },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = LocationHelper.formatDistance(nearby.distanceKm),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = KuwaitEmerald
+                        )
                     }
                 }
             }

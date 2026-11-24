@@ -169,8 +169,62 @@ object AppStrings {
     fun selectPointsPromptDesc(lang: AppLanguage) =
         if (isArabic(lang)) "اختر محطة الانطلاق ومحطة الوصول أعلاه أو جرّب إحدى الرحلات الشائعة." else "Pick a start station and destination above, or tap a popular Kuwait trip below."
     fun viewRouteAction(lang: AppLanguage) = if (isArabic(lang)) "تفاصيل الخط" else "Route Details"
-    fun pickerTitleStart(lang: AppLanguage) = if (isArabic(lang)) "اختر محطة الانطلاق" else "Choose Start Station"
-    fun pickerTitleDest(lang: AppLanguage) = if (isArabic(lang)) "اختر محطة الوصول" else "Choose Destination Station"
+    fun pickerTitleStart(lang: AppLanguage) = if (isArabic(lang)) "اختر نقطة الانطلاق" else "Choose Start Station or Address"
+    fun pickerTitleDest(lang: AppLanguage) = if (isArabic(lang)) "اختر نقطة الوصول" else "Choose Destination or Address"
+    fun addressOrCoordsPlaceholder(lang: AppLanguage) =
+        if (isArabic(lang)) "أدخل محطة أو عنواناً في الكويت أو إحداثيات (29.36, 47.97)..." else "Search stop, Kuwait address, or coords (29.36, 47.97)..."
+    fun useMyGpsLabel(lang: AppLanguage) = if (isArabic(lang)) "موقعي GPS" else "My GPS"
+    fun currentGpsPointLabel(lang: AppLanguage) = if (isArabic(lang)) "موقعي الحالي (GPS)" else "Current GPS Location"
+    fun useCustomLocationAction(query: String, lang: AppLanguage) =
+        if (isArabic(lang)) "استخدام العنوان / الإحداثيات: $query" else "Use Address / Coordinates: $query"
+    fun addressNotResolvedWarning(lang: AppLanguage) =
+        if (isArabic(lang)) "لم يتم العثور على هذا العنوان في الكويت. جرّب اسم منطقة أو إحداثيات مثل 29.367, 47.978" else "Address not found in Kuwait. Try an area name or coordinates like 29.367, 47.978"
+    fun walkToBoardStop(meters: Int, stopName: String, lang: AppLanguage) =
+        if (isArabic(lang)) "امشِ ~$meters م إلى $stopName" else "Walk ~${meters}m to $stopName"
+    fun walkFromAlightStop(meters: Int, stopName: String, lang: AppLanguage) =
+        if (isArabic(lang)) "انزل في $stopName وامشِ ~$meters م للوجهة" else "Alight at $stopName (~${meters}m walk)"
+
+    // Closest Stops GPS Overlay & Route Share
+    fun closestStopsOverlayTitle(lang: AppLanguage) =
+        if (isArabic(lang)) "أقرب المحطات لموقعك" else "Closest Stops to You"
+    fun enableGpsOverlayCta(lang: AppLanguage) =
+        if (isArabic(lang)) "تفعيل GPS لأقرب المحطات" else "Find Closest Stops (GPS)"
+    fun shareRouteDescription(lang: AppLanguage) =
+        if (isArabic(lang)) "مشاركة تفاصيل الخط" else "Share route info"
+    fun shareRouteChooserTitle(lang: AppLanguage) =
+        if (isArabic(lang)) "مشاركة خط KPTC عبر" else "Share KPTC Route via"
+
+    fun buildRouteShareText(
+        route: BusRoute,
+        activeAlerts: List<com.example.model.ServiceAlert>,
+        lang: AppLanguage
+    ): String {
+        val title = routeTitle(route, lang)
+        val origin = routeOrigin(route, lang)
+        val dest = routeDestination(route, lang)
+        val corridor = routeCorridor(route, lang)
+        val alertSection = if (activeAlerts.isNotEmpty()) {
+            val firstAlert = activeAlerts.first()
+            "\n⚠️ ${alertTypeLabel(firstAlert.type, lang)}: ${alertTitle(firstAlert, lang)}"
+        } else {
+            ""
+        }
+        return if (isArabic(lang)) {
+            "🚌 خط KPTC رقم ${route.number}: $title\n" +
+                "📍 المسار: $origin ↔ $dest\n" +
+                "🛣️ المحطات: $corridor\n" +
+                "🎫 التعرفة: ${fareAmount(route.fareFils, lang)} • ${everyMinutes(route.frequencyMinutes, lang)}\n" +
+                "🕒 التشغيل: ${route.firstBus} – ${route.lastBus}$alertSection\n" +
+                "شركة النقل العام الكويتية (KPTC)"
+        } else {
+            "🚌 KPTC Kuwait Route ${route.number}: $title\n" +
+                "📍 Path: $origin ↔ $dest\n" +
+                "🛣️ Corridor: $corridor\n" +
+                "🎫 Fare: ${fareAmount(route.fareFils, lang)} • ${everyMinutes(route.frequencyMinutes, lang)}\n" +
+                "🕒 Hours: ${route.firstBus} – ${route.lastBus}$alertSection\n" +
+                "Kuwait Public Transport Company (KPTC)"
+        }
+    }
 
     // Filter Tabs
     fun filterTabLabel(tab: RouteFilterTab, lang: AppLanguage): String = if (isArabic(lang)) {

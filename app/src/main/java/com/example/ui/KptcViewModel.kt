@@ -6,10 +6,12 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.KuwaitBusData
 import com.example.data.LiveTelemetryEngine
 import com.example.data.ServiceAlertEngine
+import com.example.data.TripEndpointPoint
 import com.example.data.TripItinerary
 import com.example.data.TripPlannerEngine
 import com.example.data.UserPreferencesRepository
 import com.example.location.LocationHelper
+import com.example.location.NearbyBusStop
 import com.example.location.UserCoordinates
 import com.example.model.BusRoute
 import com.example.model.BusStop
@@ -53,7 +55,10 @@ data class KptcUiState(
     val stationQuery: String = "",
     val filteredStops: List<BusStop> = KuwaitBusData.allStops,
     val userCoordinates: UserCoordinates? = null,
+    val closestStops: List<NearbyBusStop> = emptyList(),
     val isFetchingLocation: Boolean = false,
+    val tripStartEndpoint: TripEndpointPoint? = null,
+    val tripEndEndpoint: TripEndpointPoint? = null,
     val tripStartStop: BusStop? = null,
     val tripEndStop: BusStop? = null,
     val tripRecommendations: List<TripItinerary> = emptyList(),
@@ -79,8 +84,8 @@ class KptcViewModel(application: Application) : AndroidViewModel(application) {
     private val kuwaitClockFlow = MutableStateFlow(LiveTelemetryEngine.currentKuwaitClock())
     private val userCoordsFlow = MutableStateFlow<UserCoordinates?>(null)
     private val fetchingLocationFlow = MutableStateFlow(false)
-    private val tripStartStopFlow = MutableStateFlow<BusStop?>(null)
-    private val tripEndStopFlow = MutableStateFlow<BusStop?>(null)
+    private val tripStartEndpointFlow = MutableStateFlow<TripEndpointPoint?>(null)
+    private val tripEndEndpointFlow = MutableStateFlow<TripEndpointPoint?>(null)
     private val serviceAlertsFlow = MutableStateFlow(ServiceAlertEngine.activeAlerts())
     private val dismissedAlertsFlow = MutableStateFlow<Set<String>>(emptySet())
     private val alertFilterFlow = MutableStateFlow<ServiceAlertType?>(null)
@@ -108,7 +113,7 @@ class KptcViewModel(application: Application) : AndroidViewModel(application) {
         MapSelection(routeNum, busId, stopId, preview, lang)
     }
 
-    private val tripEndpointsFlow = combine(tripStartStopFlow, tripEndStopFlow) { s, e -> s to e }
+    private val tripEndpointsFlow = combine(tripStartEndpointFlow, tripEndEndpointFlow) { s, e -> s to e }
     private val alertStateFlow = combine(
         serviceAlertsFlow,
         dismissedAlertsFlow,
@@ -144,14 +149,25 @@ class KptcViewModel(application: Application) : AndroidViewModel(application) {
             query = filters.stationQuery,
             userCoords = userCoords
         )
+        val closestStops = if (userCoords != null) {
+            LocationHelper.findClosestStops(
+                latitude = userCoords.latitude,
+                longitude = userCoords.longitude,
+                stops = KuwaitBusData.allStops,
+                limit = 5
+            )
+        } else {
+            emptyList()
+        }
 
-        val startStop = tripPair.first
-        val endStop = tripPair.second
-        val recommendations = if (startStop != null && endStop != null) {
-            TripPlannerEngine.planTrip(
-                startStop = startStop,
-                endStop = endStop,
+        val startEndpoint = tripPair.first
+        val endEndpoint = tripPair.second
+        val recommendations = if (startEndpoint != null && endEndpoint != null) {
+            TripPlannerEngine.planTripFromEndpoints(
+                origin = startEndpoint,
+                destination = endEndpoint,
                 routes = KuwaitBusData.routes,
+                stops = KuwaitBusData.allStops,
                 liveBuses = buses
             )
         } else {
@@ -174,9 +190,12 @@ class KptcViewModel(application: Application) : AndroidViewModel(application) {
             stationQuery = filters.stationQuery,
             filteredStops = filteredStops,
             userCoordinates = userCoords,
+            closestStops = closestStops,
             isFetchingLocation = locationPair.second,
-            tripStartStop = startStop,
-            tripEndStop = endStop,
+            tripStartEndpoint = startEndpoint,
+            tripEndEndpoint = endEndpoint,
+            tripStartStop = startEndpoint?.exactStop,
+            tripEndStop = endEndpoint?.exactStop,
             tripRecommendations = recommendations,
             serviceAlerts = alertTriple.first,
             dismissedAlertIds = alertTriple.second,
@@ -257,23 +276,102 @@ class KptcViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun selectTripStartStop(stop: BusStop?) {
-        tripStartStopFlow.value = stop
+        tripStartEndpointFlow.value = stop?.let {
+            TripEndpointPoint(
+                labelEn = it.nameEn,
+                labelAr = it.nameAr,
+                latitude = it.latitude,
+                longitude = it.longitude,
+                exactStop = it
+            )
+        }
     }
 
     fun selectTripEndStop(stop: BusStop?) {
-        tripEndStopFlow.value = stop
+        tripEndEndpointFlow.value = stop?.let {
+            TripEndpointPoint(
+                labelEn = it.nameEn,
+                labelAr = it.nameAr,
+                latitude = it.latitude,
+                longitude = it.longitude,
+                exactStop = it
+            )
+        }
+    }
+
+    fun resolveAndSelectTripQuery(
+        isOrigin: Boolean,
+        query: String,
+        onResult: (Boolean) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            val localMatch = TripPlannerEngine.resolveQueryToEndpoint(query)
+            val resolved = if (localMatch != null) {
+                localMatch
+            } else {
+                val context = getApplication<Application>().applicationContext
+                val geocoded = LocationHelper.geocodeKuwaitAddress(context, query)
+                TripPlannerEngine.resolveQueryToEndpoint(
+                    query = query,
+                    geocodedCoords = geocoded
+                )
+            }
+            if (resolved != null) {
+                if (isOrigin) {
+                    tripStartEndpointFlow.value = resolved
+                } else {
+                    tripEndEndpointFlow.value = resolved
+                }
+                onResult(true)
+            } else {
+                onResult(false)
+            }
+        }
+    }
+
+    fun useCurrentGpsForTripOrigin() {
+        val existing = userCoordsFlow.value
+        if (existing != null) {
+            tripStartEndpointFlow.value = TripEndpointPoint(
+                labelEn = "Current GPS Location",
+                labelAr = "موقعي الحالي (GPS)",
+                latitude = existing.latitude,
+                longitude = existing.longitude,
+                exactStop = null,
+                isGps = true
+            )
+            return
+        }
+        val context = getApplication<Application>().applicationContext
+        if (!LocationHelper.hasLocationPermission(context)) return
+        viewModelScope.launch {
+            fetchingLocationFlow.value = true
+            val coords = LocationHelper.fetchCurrentLocation(context)
+            fetchingLocationFlow.value = false
+            if (coords != null) {
+                userCoordsFlow.value = coords
+                tripStartEndpointFlow.value = TripEndpointPoint(
+                    labelEn = "Current GPS Location",
+                    labelAr = "موقعي الحالي (GPS)",
+                    latitude = coords.latitude,
+                    longitude = coords.longitude,
+                    exactStop = null,
+                    isGps = true
+                )
+            }
+        }
     }
 
     fun swapTripStops() {
-        val currentStart = tripStartStopFlow.value
-        val currentEnd = tripEndStopFlow.value
-        tripStartStopFlow.value = currentEnd
-        tripEndStopFlow.value = currentStart
+        val currentStart = tripStartEndpointFlow.value
+        val currentEnd = tripEndEndpointFlow.value
+        tripStartEndpointFlow.value = currentEnd
+        tripEndEndpointFlow.value = currentStart
     }
 
     fun applyQuickTrip(startId: String, endId: String) {
-        tripStartStopFlow.value = KuwaitBusData.stopsMap[startId]
-        tripEndStopFlow.value = KuwaitBusData.stopsMap[endId]
+        selectTripStartStop(KuwaitBusData.stopsMap[startId])
+        selectTripEndStop(KuwaitBusData.stopsMap[endId])
     }
 
     fun dismissAlert(alertId: String) {

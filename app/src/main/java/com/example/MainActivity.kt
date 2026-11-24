@@ -172,12 +172,10 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun KptcOpeningLogoSplash() {
-    val scaleAnim = remember { Animatable(0.96f) }
     val alphaAnim = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        alphaAnim.animateTo(1f, animationSpec = tween(350))
-        scaleAnim.animateTo(1f, animationSpec = tween(550))
+        alphaAnim.animateTo(1f, animationSpec = tween(320))
     }
 
     Box(
@@ -186,9 +184,9 @@ private fun KptcOpeningLogoSplash() {
             .background(
                 androidx.compose.ui.graphics.Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF163D4D),
-                        Color(0xFF285F75),
-                        Color(0xFF1E3E4C)
+                        Color(0xFF11163E),
+                        Color(0xFF191D48),
+                        Color(0xFF231C51)
                     )
                 )
             )
@@ -201,7 +199,6 @@ private fun KptcOpeningLogoSplash() {
             contentScale = ContentScale.Fit,
             modifier = Modifier
                 .fillMaxSize()
-                .scale(scaleAnim.value)
                 .alpha(alphaAnim.value)
         )
     }
@@ -332,6 +329,8 @@ fun KptcKuwaitApp(
                                 uiState = uiState,
                                 onSelectStartStop = viewModel::selectTripStartStop,
                                 onSelectEndStop = viewModel::selectTripEndStop,
+                                onResolveCustomQuery = viewModel::resolveAndSelectTripQuery,
+                                onUseGpsOrigin = viewModel::useCurrentGpsForTripOrigin,
                                 onSwapStops = viewModel::swapTripStops,
                                 onApplyQuickTrip = viewModel::applyQuickTrip,
                                 onToggleLanguage = viewModel::toggleLanguage,

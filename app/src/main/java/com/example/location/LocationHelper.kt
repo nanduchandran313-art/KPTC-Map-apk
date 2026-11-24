@@ -4,10 +4,16 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Geocoder
+import android.os.Build
 import androidx.core.content.ContextCompat
+import com.example.model.BusStop
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import java.util.Locale
 import kotlin.coroutines.resume
 import kotlin.math.PI
 import kotlin.math.atan2
@@ -19,6 +25,11 @@ data class UserCoordinates(
     val latitude: Double,
     val longitude: Double,
     val isLiveGps: Boolean
+)
+
+data class NearbyBusStop(
+    val stop: BusStop,
+    val distanceKm: Double
 )
 
 object LocationHelper {
@@ -67,6 +78,58 @@ object LocationHelper {
                     }
                 }
                 .addOnFailureListener { cont.resume(null) }
+        }
+    }
+
+    fun findClosestStops(
+        latitude: Double,
+        longitude: Double,
+        stops: List<BusStop>,
+        limit: Int = 5
+    ): List<NearbyBusStop> {
+        return stops
+            .map { stop ->
+                NearbyBusStop(
+                    stop = stop,
+                    distanceKm = haversineKm(latitude, longitude, stop.latitude, stop.longitude)
+                )
+            }
+            .sortedBy { it.distanceKm }
+            .take(limit)
+    }
+
+    @Suppress("DEPRECATION")
+    suspend fun geocodeKuwaitAddress(
+        context: Context,
+        query: String
+    ): Pair<Double, Double>? = withContext(Dispatchers.IO) {
+        val trimmed = query.trim()
+        if (trimmed.isEmpty() || !Geocoder.isPresent()) return@withContext null
+        val fullQuery = if (trimmed.contains("kuwait", ignoreCase = true) || trimmed.contains("الكويت")) {
+            trimmed
+        } else {
+            "$trimmed, Kuwait"
+        }
+        try {
+            val geocoder = Geocoder(context, Locale.getDefault())
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                suspendCancellableCoroutine { cont ->
+                    geocoder.getFromLocationName(fullQuery, 3) { addresses ->
+                        val match = addresses.firstOrNull {
+                            it.latitude in 28.5..30.2 && it.longitude in 46.5..49.0
+                        } ?: addresses.firstOrNull()
+                        cont.resume(match?.let { it.latitude to it.longitude })
+                    }
+                }
+            } else {
+                val addresses = geocoder.getFromLocationName(fullQuery, 3).orEmpty()
+                val match = addresses.firstOrNull {
+                    it.latitude in 28.5..30.2 && it.longitude in 46.5..49.0
+                } ?: addresses.firstOrNull()
+                match?.let { it.latitude to it.longitude }
+            }
+        } catch (_: Exception) {
+            null
         }
     }
 

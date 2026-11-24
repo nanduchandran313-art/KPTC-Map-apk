@@ -133,4 +133,60 @@ class ExampleRobolectricTest {
         val route13Alerts = com.example.data.ServiceAlertEngine.alertsForRoute("13", alerts)
         assertTrue("Route 13 should have an active delay alert", route13Alerts.isNotEmpty())
     }
+
+    @Test
+    fun `trip planner parses coordinates and addresses with walking guidance`() {
+        val parsed = TripPlannerEngine.parseCoordinates("29.3672, 47.9788")
+        assertTrue(parsed != null)
+        assertEquals(29.3672, parsed!!.first, 0.0001)
+        assertEquals(47.9788, parsed.second, 0.0001)
+        assertEquals(null, TripPlannerEngine.parseCoordinates("not coordinates"))
+
+        val origin = TripPlannerEngine.resolveQueryToEndpoint("Kuwait Towers")
+        val dest = TripPlannerEngine.resolveQueryToEndpoint("29.2268, 47.9690")
+        assertTrue(origin != null && dest != null)
+
+        val plans = TripPlannerEngine.planTripFromEndpoints(
+            origin = origin!!,
+            destination = dest!!,
+            routes = KuwaitBusData.routes,
+            stops = KuwaitBusData.allStops
+        )
+        assertTrue("Kuwait Towers -> Airport coords should suggest bus itineraries", plans.isNotEmpty())
+        assertTrue(plans.any { it.originWalkMeters > 0 || it.destWalkMeters > 0 })
+    }
+
+    @Test
+    fun `location helper returns sorted closest stops for Kuwait coordinates`() {
+        val salmiya = KuwaitBusData.stopsMap.getValue("salmiya_coop")
+        val closest = com.example.location.LocationHelper.findClosestStops(
+            latitude = salmiya.latitude,
+            longitude = salmiya.longitude,
+            stops = KuwaitBusData.allStops,
+            limit = 5
+        )
+        assertEquals(5, closest.size)
+        assertEquals("salmiya_coop", closest.first().stop.id)
+        for (i in 0 until closest.size - 1) {
+            assertTrue(closest[i].distanceKm <= closest[i + 1].distanceKm)
+        }
+    }
+
+    @Test
+    fun `route share text formats route number fare corridor and alerts`() {
+        val route13 = KuwaitBusData.routesByNumber.getValue("13")
+        val alerts = com.example.data.ServiceAlertEngine.alertsForRoute(
+            "13",
+            com.example.data.ServiceAlertEngine.activeAlerts()
+        )
+        val shareEn = com.example.ui.localization.AppStrings.buildRouteShareText(
+            route = route13,
+            activeAlerts = alerts,
+            lang = com.example.ui.localization.AppLanguage.ENGLISH
+        )
+        assertTrue(shareEn.contains("13"))
+        assertTrue(shareEn.contains("250 Fils"))
+        assertTrue(shareEn.contains(route13.corridorSummary))
+        assertTrue(shareEn.contains("KPTC"))
+    }
 }
