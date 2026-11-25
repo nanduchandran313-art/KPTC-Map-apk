@@ -25,9 +25,9 @@ class ExampleRobolectricTest {
     }
 
     @Test
-    fun `all 23 requested KPTC routes exist with valid Kuwait coordinates`() {
+    fun `all 24 requested KPTC routes exist with valid Kuwait coordinates`() {
         val expectedRoutes = setOf(
-            "11", "12", "13", "15", "16", "18", "21", "23", "51",
+            "11", "12", "13", "15", "16", "18", "21", "23", "40", "51",
             "66", "66X", "77", "77X", "999", "103", "106", "106X",
             "102X", "102A", "507", "507S", "A2", "105"
         )
@@ -50,13 +50,13 @@ class ExampleRobolectricTest {
             routes = KuwaitBusData.routes,
             previewModeEnabled = true
         )
-        assertTrue("Live buses should be active", liveBuses.size >= 46)
+        assertTrue("Live buses should be active", liveBuses.size >= 48)
         val coveredRoutes = liveBuses.map { it.routeNumber }.toSet()
-        assertEquals(23, coveredRoutes.size)
+        assertEquals(24, coveredRoutes.size)
     }
 
     @Test
-    fun `arabic translations cover all 23 routes`() {
+    fun `arabic translations cover all 24 routes`() {
         KuwaitBusData.routes.forEach { route ->
             val ar = com.example.ui.localization.AppStrings.arabicRoutes[route.number]
             assertTrue("Route ${route.number} should have Arabic title", ar != null && ar.titleAr.isNotBlank())

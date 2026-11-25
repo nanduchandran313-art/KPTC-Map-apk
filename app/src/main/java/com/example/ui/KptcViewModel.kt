@@ -31,7 +31,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 enum class RouteFilterTab(val label: String) {
-    ALL("All (23)"),
+    ALL("All (24)"),
     FAVORITES("Saved"),
     CITY("City"),
     EXPRESS("Express (X)"),

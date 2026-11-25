@@ -1,6 +1,9 @@
 package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -11,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,8 +25,13 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ContactPhone
 import androidx.compose.material.icons.filled.DirectionsBus
@@ -46,6 +55,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,6 +69,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.example.R
 import com.example.data.ServiceAlertEngine
 import com.example.model.BusRoute
@@ -282,7 +296,8 @@ fun RoutesScreen(
                             kuwaitTime = uiState.kuwaitClock.formattedTime,
                             isServiceOperating = uiState.kuwaitClock.isServiceOperating,
                             activeBusCount = uiState.liveBuses.size,
-                            routeCount = uiState.allRoutes.size
+                            routeCount = uiState.allRoutes.size,
+                            onSlideRouteClick = onRouteClick
                         )
                     }
                 }
@@ -367,14 +382,51 @@ fun RoutesScreen(
     }
 }
 
+private data class HeroSlideItem(
+    val id: String,
+    val imageRes: Int,
+    val contentDescription: String,
+    val targetRouteNumber: String? = null
+)
+
 @Composable
 private fun KptcHeroCard(
     language: AppLanguage,
     kuwaitTime: String,
     isServiceOperating: Boolean,
     activeBusCount: Int,
-    routeCount: Int
+    routeCount: Int,
+    onSlideRouteClick: (String) -> Unit
 ) {
+    val slides = listOf(
+        HeroSlideItem(
+            id = "closer",
+            imageRes = R.drawable.img_kptc_main_hero_closer,
+            contentDescription = "KPTC Kuwait - We're Closer Than You Think"
+        ),
+        HeroSlideItem(
+            id = "route_106_quiz",
+            imageRes = R.drawable.img_kptc_hero_route106,
+            contentDescription = "KPTC Route 106 - Which destination does this bus go to? Fahaheel",
+            targetRouteNumber = "106"
+        )
+    )
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { slides.size })
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        // Side-slide in the second showcase slide shortly after opening, then cycle cleanly
+        delay(2400L)
+        while (true) {
+            val nextPage = (pagerState.currentPage + 1) % slides.size
+            pagerState.animateScrollToPage(
+                page = nextPage,
+                animationSpec = tween(durationMillis = 550, easing = FastOutSlowInEasing)
+            )
+            delay(4200L)
+        }
+    }
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -387,12 +439,121 @@ private fun KptcHeroCard(
         tonalElevation = 1.dp
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            Image(
-                painter = painterResource(id = R.drawable.img_kptc_main_hero_closer),
-                contentDescription = "KPTC Kuwait - We're Closer Than You Think",
-                contentScale = ContentScale.FillWidth,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(0.8f)
+            ) {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag("kptc_hero_slideshow")
+                ) { pageIndex ->
+                    val slide = slides[pageIndex]
+                    Image(
+                        painter = painterResource(id = slide.imageRes),
+                        contentDescription = slide.contentDescription,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .let { mod ->
+                                if (slide.targetRouteNumber != null) {
+                                    mod.clickable { onSlideRouteClick(slide.targetRouteNumber) }
+                                } else {
+                                    mod
+                                }
+                            }
+                            .testTag("kptc_hero_slide_${slide.id}")
+                    )
+                }
+
+                // Side Prev / Next controls + animated slideshow dots
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                val prev = (pagerState.currentPage - 1 + slides.size) % slides.size
+                                pagerState.animateScrollToPage(
+                                    page = prev,
+                                    animationSpec = tween(480, easing = FastOutSlowInEasing)
+                                )
+                            }
+                        },
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.28f))
+                            .testTag("hero_slide_prev")
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            contentDescription = "Previous slide",
+                            tint = Color.White
+                        )
+                    }
+
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.34f),
+                        shape = RoundedCornerShape(50)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            slides.forEachIndexed { idx, _ ->
+                                val selected = pagerState.currentPage == idx
+                                val dotWidth by animateDpAsState(
+                                    targetValue = if (selected) 22.dp else 8.dp,
+                                    animationSpec = tween(260),
+                                    label = "hero_dot_width"
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .width(dotWidth)
+                                        .height(8.dp)
+                                        .clip(RoundedCornerShape(50))
+                                        .background(
+                                            if (selected) Color(0xFFDEDF2A) else Color.White.copy(alpha = 0.55f)
+                                        )
+                                )
+                            }
+                        }
+                    }
+
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                val next = (pagerState.currentPage + 1) % slides.size
+                                pagerState.animateScrollToPage(
+                                    page = next,
+                                    animationSpec = tween(480, easing = FastOutSlowInEasing)
+                                )
+                            }
+                        },
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.28f))
+                            .testTag("hero_slide_next")
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = "Next slide",
+                            tint = Color.White
+                        )
+                    }
+                }
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

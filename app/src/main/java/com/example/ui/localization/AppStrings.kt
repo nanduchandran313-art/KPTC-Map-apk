@@ -202,7 +202,7 @@ object AppStrings {
     fun passAdPlansSummary(lang: AppLanguage) =
         if (isArabic(lang)) "10 د.ك / شهر  •  25 د.ك / 91 يوماً" else "10 KD / 1 Mo  •  25 KD / 91 Days"
     fun passAdFeaturesLine(lang: AppLanguage) =
-        if (isArabic(lang)) "رحلات غير محدودة • جميع الخطوط (23)" else "Unlimited rides • All 23 routes"
+        if (isArabic(lang)) "رحلات غير محدودة • جميع الخطوط (24)" else "Unlimited rides • All 24 routes"
     fun passAdSubscribeCta(lang: AppLanguage) =
         if (isArabic(lang)) "اشترك الآن 1880001" else "Subscribe 1880001"
     fun passAdPosterDesc(lang: AppLanguage) =
@@ -273,7 +273,7 @@ object AppStrings {
     // Filter Tabs
     fun filterTabLabel(tab: RouteFilterTab, lang: AppLanguage): String = if (isArabic(lang)) {
         when (tab) {
-            RouteFilterTab.ALL -> "الكل (23)"
+            RouteFilterTab.ALL -> "الكل (24)"
             RouteFilterTab.FAVORITES -> "المحفوظة"
             RouteFilterTab.CITY -> "المدينة"
             RouteFilterTab.EXPRESS -> "سريع (X)"
@@ -391,7 +391,7 @@ object AppStrings {
     }
 
     fun all23Routes(lang: AppLanguage): String =
-        if (isArabic(lang)) "كل الـ 23 خطاً" else "All 23 Routes"
+        if (isArabic(lang)) "كل الـ 24 خطاً" else "All 24 Routes"
 
     fun mapOverlayLegend(focusedRoute: BusRoute?, busCount: Int, lang: AppLanguage): String = if (isArabic(lang)) {
         if (focusedRoute != null) "خط ${focusedRoute.number} • $busCount باص مباشر" else "شبكة الكويت • $busCount باص نشط"
@@ -569,6 +569,13 @@ object AppStrings {
             destinationAr = "صبحان",
             corridorSummaryAr = "المرقاب • برج التحرير • المالية • شارع السور • طريق الملك فيصل • طريق الرياض • الخالدية • الدائري الخامس • حديقة الحيوان • خيطان • الفروانية • صبحان",
             operationNotesAr = "مسار من 19 محطة يربط المرقاب والمالية عبر طريق الرياض والملك فيصل والخالدية وحديقة الحيوان وخيطان وهوليدي إن الفروانية إلى صبحان."
+        ),
+        "40" to RouteArabicText(
+            titleAr = "شرق – الفحيحيل",
+            originAr = "شرق",
+            destinationAr = "الفحيحيل",
+            corridorSummaryAr = "شرق • المالية • طريق المطار • الشويخ • خيطان • جليب الشيوخ • الفروانية • صبحان • الفحيحيل",
+            operationNotesAr = "خط بين المحافظات يربط شرق والمالية عبر طريق المطار والشويخ وخيطان وجليب الشيوخ والفروانية وصبحان وصولاً إلى الفحيحيل."
         ),
         "51" to RouteArabicText(
             titleAr = "شرق – دوار جليب الشيوخ",

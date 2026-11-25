@@ -251,7 +251,7 @@ object KuwaitBusData {
 
     private fun stop(id: String): BusStop = stopsMap.getValue(id)
 
-    // --- ALL 23 REQUESTED KPTC KUWAIT BUS ROUTES ---
+    // --- ALL 24 KPTC KUWAIT BUS ROUTES ---
     val routes: List<BusRoute> = listOf(
         BusRoute(
             number = "11",
@@ -613,6 +613,34 @@ object KuwaitBusData {
             distanceKm = 24.8,
             badgeColor = RouteInterGovColor,
             operationNotes = "19-stop route linking Mirqab & Maliya along Riyadh / King Faisal Rd, Khaldiya, Kuwait Zoo, Khaitan, and Holiday Inn Farwaniyah to Subhan."
+        ),
+        BusRoute(
+            number = "40",
+            titleEn = "Sharq – Fahaheel",
+            origin = "Sharq",
+            destination = "Fahaheel",
+            corridorSummary = "Sharq • Maliya • Airport Rd • Shuwaikh • Khaitan • Jleeb • Farwaniya • Subhan • Fahaheel",
+            category = RouteCategory.INTER_GOVERNORATE,
+            stops = listOf(
+                stop("sharq"),
+                stop("maliya"),
+                stop("airport_rd_55_shuwaikh"),
+                stop("shuwaikh_ind"),
+                stop("new_khaitan"),
+                stop("jleeb_coop"),
+                stop("farwaniya_coop"),
+                stop("subhan_ind"),
+                stop("fahaheel_green_tower")
+            ),
+            firstBus = "04:30 AM",
+            lastBus = "10:30 PM",
+            frequencyMinutes = 20,
+            peakFrequencyMinutes = 12,
+            fareFils = 250,
+            estimatedDurationMinutes = 72,
+            distanceKm = 49.5,
+            badgeColor = RouteInterGovColor,
+            operationNotes = "Inter-governorate trunk from Sharq & Maliya along Airport Rd and Shuwaikh through Khaitan, Jleeb, Farwaniya, and Subhan Industrial Area to Fahaheel."
         ),
         BusRoute(
             number = "51",
