@@ -159,6 +159,19 @@ fun KptcPassPromoCard(
             contentDesc = AppStrings.alwaysReadyAdPosterDesc(language),
             startColor = FleetDeepBlue,
             endColor = FleetCyanBlue
+        ),
+        PromoAdSlide(
+            id = "route_21_quiz",
+            imageRes = R.drawable.img_kptc_route21_quiz,
+            badgeIcon = Icons.Default.DirectionsBus,
+            badgeText = AppStrings.route21AdBadge(language),
+            headline = AppStrings.route21AdHeadline(language),
+            subheadline = AppStrings.route21AdSubheadline(language),
+            featureLine = AppStrings.route21AdFeaturesLine(language),
+            ctaText = AppStrings.alwaysReadyAdCta(language),
+            contentDesc = AppStrings.route21AdPosterDesc(language),
+            startColor = AdSkyNavy,
+            endColor = FleetCyanBlue
         )
     )
 

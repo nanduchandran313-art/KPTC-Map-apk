@@ -238,6 +238,18 @@ object AppStrings {
     fun alwaysReadyAdPosterDesc(lang: AppLanguage) =
         if (isArabic(lang)) "إعلان أسطول باصات الكويت KPTC جاهزون دائماً للانطلاق" else "KPTC Always Ready to Move bus fleet poster"
 
+    // Route 21 Destination Poster Slide
+    fun route21AdBadge(lang: AppLanguage) =
+        if (isArabic(lang)) "خط 21" else "ROUTE 21"
+    fun route21AdHeadline(lang: AppLanguage) =
+        if (isArabic(lang)) "إلى أي وجهة يتجه الباص 21؟" else "Where Does Route 21 Go?"
+    fun route21AdSubheadline(lang: AppLanguage) =
+        if (isArabic(lang)) "المرقاب ← دوار جليب الشيوخ" else "Mirqab → Jleeb Round-About"
+    fun route21AdFeaturesLine(lang: AppLanguage) =
+        if (isArabic(lang)) "20 محطة • 250 فلس • الخط الساخن 1880001" else "20 stops • 250 Fils • Hotline 1880001"
+    fun route21AdPosterDesc(lang: AppLanguage) =
+        if (isArabic(lang)) "ملصق خط 21 إلى أي وجهة يتجه هذا الباص" else "KPTC Route 21 destination poster"
+
     fun buildRouteShareText(
         route: BusRoute,
         activeAlerts: List<com.example.model.ServiceAlert>,

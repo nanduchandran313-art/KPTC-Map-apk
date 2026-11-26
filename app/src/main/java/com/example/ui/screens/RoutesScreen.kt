@@ -409,13 +409,19 @@ private fun KptcHeroCard(
             imageRes = R.drawable.img_kptc_hero_route106,
             contentDescription = "KPTC Route 106 - Which destination does this bus go to? Fahaheel",
             targetRouteNumber = "106"
+        ),
+        HeroSlideItem(
+            id = "route_21_quiz",
+            imageRes = R.drawable.img_kptc_route21_quiz,
+            contentDescription = AppStrings.route21AdPosterDesc(language),
+            targetRouteNumber = "21"
         )
     )
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { slides.size })
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        // Side-slide in the second showcase slide shortly after opening, then cycle cleanly
+        // Side-slide in the next showcase slide shortly after opening, then cycle cleanly
         delay(2400L)
         while (true) {
             val nextPage = (pagerState.currentPage + 1) % slides.size
@@ -443,6 +449,7 @@ private fun KptcHeroCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(0.8f)
+                    .background(Color(0xFFF3F6F9))
             ) {
                 HorizontalPager(
                     state = pagerState,
@@ -454,7 +461,7 @@ private fun KptcHeroCard(
                     Image(
                         painter = painterResource(id = slide.imageRes),
                         contentDescription = slide.contentDescription,
-                        contentScale = ContentScale.Crop,
+                        contentScale = if (slide.id == "route_21_quiz") ContentScale.Fit else ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxSize()
                             .let { mod ->
