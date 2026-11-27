@@ -29,12 +29,14 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Traffic
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -365,7 +367,8 @@ fun ServiceAlertsNotificationSheet(
     onDismissAlert: (String) -> Unit,
     onRestoreAll: () -> Unit,
     onRouteClick: (String) -> Unit,
-    onDismissSheet: () -> Unit
+    onDismissSheet: () -> Unit,
+    onOpenTrafficStatus: () -> Unit = {}
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val visibleAlerts = remember(allAlerts, dismissedIds, selectedFilter) {
@@ -416,6 +419,29 @@ fun ServiceAlertsNotificationSheet(
                         Text(AppStrings.restoreAlertsAction(language))
                     }
                 }
+            }
+
+            FilledTonalButton(
+                onClick = {
+                    onDismissSheet()
+                    onOpenTrafficStatus()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .defaultMinSize(minHeight = 48.dp)
+                    .testTag("sheet_open_traffic_button")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Traffic,
+                    contentDescription = null,
+                    tint = ExpressCrimson,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = AppStrings.kuwaitTrafficMenuTitle(language),
+                    fontWeight = FontWeight.SemiBold
+                )
             }
 
             // Filter Chips

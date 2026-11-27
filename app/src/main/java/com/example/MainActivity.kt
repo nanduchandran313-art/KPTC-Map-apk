@@ -80,6 +80,7 @@ import com.example.ui.localization.AppLanguage
 import com.example.ui.localization.AppStrings
 import com.example.ui.localization.LocalAppLanguage
 import com.example.ui.screens.CompanyInfoScreen
+import com.example.ui.screens.KuwaitRoadTrafficScreen
 import com.example.ui.screens.LiveMapScreen
 import com.example.ui.screens.RouteDetailScreen
 import com.example.ui.screens.RoutesScreen
@@ -95,6 +96,7 @@ object KptcDestinations {
     const val LIVE_MAP = "live_map"
     const val STATIONS = "stations"
     const val COMPANY = "company"
+    const val TRAFFIC = "traffic"
     const val ROUTE_DETAIL = "route_detail/{routeNumber}"
 
     fun routeDetail(routeNumber: String): String = "route_detail/$routeNumber"
@@ -331,7 +333,10 @@ fun KptcKuwaitApp(
                                     navigateToTab(KptcDestinations.COMPANY)
                                 },
                                 onOpenAlerts = { showAlertsSheet = true },
-                                onDismissAlert = viewModel::dismissAlert
+                                onDismissAlert = viewModel::dismissAlert,
+                                onOpenTrafficStatus = {
+                                    navController.navigate(KptcDestinations.TRAFFIC)
+                                }
                             )
                         }
 
@@ -370,7 +375,10 @@ fun KptcKuwaitApp(
                                 },
                                 onRefreshLocation = viewModel::refreshLocationIfPermitted,
                                 onOpenAlerts = { showAlertsSheet = true },
-                                onDismissAlert = viewModel::dismissAlert
+                                onDismissAlert = viewModel::dismissAlert,
+                                onOpenTrafficStatus = {
+                                    navController.navigate(KptcDestinations.TRAFFIC)
+                                }
                             )
                         }
 
@@ -415,6 +423,17 @@ fun KptcKuwaitApp(
                                 onOpenAlerts = { showAlertsSheet = true }
                             )
                         }
+
+                        composable(KptcDestinations.TRAFFIC) {
+                            KuwaitRoadTrafficScreen(
+                                uiState = uiState,
+                                onBack = { navController.popBackStack() },
+                                onToggleLanguage = viewModel::toggleLanguage,
+                                onRouteClick = { routeNum ->
+                                    navController.navigate(KptcDestinations.routeDetail(routeNum))
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -431,7 +450,10 @@ fun KptcKuwaitApp(
                     onRouteClick = { routeNum ->
                         navController.navigate(KptcDestinations.routeDetail(routeNum))
                     },
-                    onDismissSheet = { showAlertsSheet = false }
+                    onDismissSheet = { showAlertsSheet = false },
+                    onOpenTrafficStatus = {
+                        navController.navigate(KptcDestinations.TRAFFIC)
+                    }
                 )
             }
         }

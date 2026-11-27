@@ -113,3 +113,37 @@ data class ServiceAlert(
     val delayMinutes: Int? = null,
     val updatedTimeLabel: String
 )
+
+enum class RoadConditionStatus {
+    CLOSED,
+    BLOCKED,
+    HEAVY_TRAFFIC,
+    OPEN_SMOOTH
+}
+
+data class KuwaitRoadCondition(
+    val id: String,
+    val roadNameEn: String,
+    val roadNameAr: String,
+    val sectionEn: String,
+    val sectionAr: String,
+    val detourOrNoteEn: String,
+    val detourOrNoteAr: String,
+    val status: RoadConditionStatus,
+    val delayMinutes: Int,
+    val trafficTimeLabelEn: String,
+    val trafficTimeLabelAr: String,
+    val affectedRouteNumbers: List<String>
+)
+
+data class KuwaitTrafficSummary(
+    val kuwaitTimeFormatted: String,
+    val trafficPeriodEn: String,
+    val trafficPeriodAr: String,
+    val nextRushWindowEn: String,
+    val nextRushWindowAr: String,
+    val closedCount: Int,
+    val blockedCount: Int,
+    val heavyTrafficCount: Int,
+    val avgExtraMinutes: Int
+)

@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Traffic
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -67,6 +68,7 @@ import com.example.ui.components.ServiceAlertBellButton
 import com.example.ui.components.TelemetryStatusBadge
 import com.example.ui.localization.AppLanguage
 import com.example.ui.localization.AppStrings
+import com.example.ui.theme.ExpressCrimson
 import com.example.ui.theme.KptcRoyalBlue
 import com.example.ui.theme.KuwaitEmerald
 
@@ -82,6 +84,7 @@ fun LiveMapScreen(
     onRefreshLocation: () -> Unit,
     onOpenAlerts: () -> Unit = {},
     onDismissAlert: (String) -> Unit = {},
+    onOpenTrafficStatus: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val lang = uiState.language
@@ -166,7 +169,8 @@ fun LiveMapScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.Start
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             TelemetryStatusBadge(
                 isServiceOperating = uiState.kuwaitClock.isServiceOperating,
@@ -176,6 +180,34 @@ fun LiveMapScreen(
                     uiState.liveBuses.size
                 }
             )
+            Surface(
+                color = ExpressCrimson.copy(alpha = 0.12f),
+                shape = RoundedCornerShape(50),
+                modifier = Modifier
+                    .defaultMinSize(minHeight = 40.dp)
+                    .clip(RoundedCornerShape(50))
+                    .clickable(onClick = onOpenTrafficStatus)
+                    .testTag("map_open_traffic_button")
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Traffic,
+                        contentDescription = AppStrings.kuwaitTrafficMenuTitle(lang),
+                        tint = ExpressCrimson,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = AppStrings.kuwaitRoadsShortChip(lang),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = ExpressCrimson,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
 
         if (!uiState.kuwaitClock.isServiceOperating) {

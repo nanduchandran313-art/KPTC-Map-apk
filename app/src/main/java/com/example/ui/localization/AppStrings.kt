@@ -137,6 +137,43 @@ object AppStrings {
     fun affectedRoutesLabel(lang: AppLanguage) =
         if (isArabic(lang)) "الخطوط المتأثرة:" else "Affected routes:"
 
+    // Kuwait Road Closures, Blocked Roads & Traffic Time
+    fun kuwaitTrafficMenuTitle(lang: AppLanguage) =
+        if (isArabic(lang)) "الطرق المغلقة وحالة المرور في الكويت" else "Kuwait Roads & Traffic Time"
+    fun kuwaitTrafficEntryCardSubtitle(closed: Int, blocked: Int, avgMin: Int, lang: AppLanguage) =
+        if (isArabic(lang)) "$closed مغلق • $blocked مسدود • متوسط التأخير +$avgMin د" else "$closed Closed • $blocked Blocked • +${avgMin}m Traffic Time"
+    fun kuwaitTrafficEntryCta(lang: AppLanguage) =
+        if (isArabic(lang)) "عرض الكل" else "Open"
+    fun kuwaitTrafficSearchPlaceholder(lang: AppLanguage) =
+        if (isArabic(lang)) "ابحث عن طريق أو منطقة (الغزالي، الجليب، الدائري الخامس)..." else "Search Kuwait road or area (Ghazali, Jleeb, 5th Ring)..."
+    fun kuwaitRoadClosedLabel(lang: AppLanguage) =
+        if (isArabic(lang)) "طريق مغلق" else "ROAD CLOSED"
+    fun kuwaitRoadBlockedLabel(lang: AppLanguage) =
+        if (isArabic(lang)) "طريق مسدود" else "ROAD BLOCKED"
+    fun kuwaitHeavyTrafficLabel(lang: AppLanguage) =
+        if (isArabic(lang)) "ازدحام مروري" else "HEAVY TRAFFIC"
+    fun kuwaitRoadOpenLabel(lang: AppLanguage) =
+        if (isArabic(lang)) "طريق سالك" else "OPEN / CLEAR"
+    fun kuwaitTrafficFilterAll(lang: AppLanguage) = if (isArabic(lang)) "الكل" else "All Roads"
+    fun kuwaitTrafficFilterClosed(lang: AppLanguage) = if (isArabic(lang)) "مغلق" else "Closed"
+    fun kuwaitTrafficFilterBlocked(lang: AppLanguage) = if (isArabic(lang)) "مسدود" else "Blocked"
+    fun kuwaitTrafficFilterHeavy(lang: AppLanguage) = if (isArabic(lang)) "ازدحام" else "Traffic"
+    fun kuwaitTrafficFilterOpen(lang: AppLanguage) = if (isArabic(lang)) "سالك" else "Open"
+    fun kuwaitExtraDelayChip(mins: Int, lang: AppLanguage) =
+        if (isArabic(lang)) "+$mins د وقت إضافي" else "+$mins min traffic time"
+    fun kuwaitNoDelayChip(lang: AppLanguage) =
+        if (isArabic(lang)) "بدون تأخير" else "No Delay"
+    fun kuwaitTimeNowLabel(lang: AppLanguage) =
+        if (isArabic(lang)) "وقت المرور الآن في الكويت" else "Kuwait Traffic Time Now"
+    fun kuwaitRoadsShortChip(lang: AppLanguage) =
+        if (isArabic(lang)) "الطرق والمرور" else "Roads & Traffic"
+    fun kuwaitAvgDelayLabel(lang: AppLanguage) =
+        if (isArabic(lang)) "وقت التأخير" else "Traffic Time"
+    fun kuwaitNoMatchingRoadsTitle(lang: AppLanguage) =
+        if (isArabic(lang)) "لا توجد طرق مطابقة للبحث" else "No matching Kuwait roads"
+    fun kuwaitNoMatchingRoadsDesc(lang: AppLanguage) =
+        if (isArabic(lang)) "جرّب البحث باسم طريق مثل الغزالي أو الجليب أو الدائري الخامس أو الفحيحيل." else "Try searching a corridor like Ghazali, Jleeb, 5th Ring, or Fahaheel."
+
     // Trip Planner Screen
     fun plannerTitle(lang: AppLanguage) = if (isArabic(lang)) "مخطط الرحلة" else "Trip Planner"
     fun plannerSubtitle(lang: AppLanguage) =

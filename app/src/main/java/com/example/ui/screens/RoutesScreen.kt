@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -39,6 +40,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Traffic
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Payments
@@ -104,6 +106,7 @@ fun RoutesScreen(
     onOpenCompanyInfo: () -> Unit = {},
     onOpenAlerts: () -> Unit = {},
     onDismissAlert: (String) -> Unit = {},
+    onOpenTrafficStatus: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val lang = uiState.language
@@ -150,6 +153,25 @@ fun RoutesScreen(
                                     .height(42.dp)
                                     .padding(horizontal = 10.dp, vertical = 4.dp)
                             )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Surface(
+                            color = ExpressCrimson.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(50),
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(50))
+                                .clickable(onClick = onOpenTrafficStatus)
+                                .testTag("open_kuwait_traffic_button")
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Traffic,
+                                    contentDescription = AppStrings.kuwaitTrafficMenuTitle(lang),
+                                    tint = ExpressCrimson,
+                                    modifier = Modifier.size(21.dp)
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.width(6.dp))
                         ServiceAlertBellButton(
@@ -271,6 +293,85 @@ fun RoutesScreen(
                                 ),
                                 modifier = Modifier.testTag("filter_tab_${tab.name.lowercase()}")
                             )
+                        }
+                    }
+                }
+
+                // Kuwait Road Closures, Road Blocked & Traffic Time Quick Option Card
+                item {
+                    val trafficSummary = androidx.compose.runtime.remember(uiState.kuwaitClock.secondsOfDay / 60) {
+                        ServiceAlertEngine.kuwaitTrafficSummary()
+                    }
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .defaultMinSize(minHeight = 56.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .clickable(onClick = onOpenTrafficStatus)
+                            .testTag("kuwait_traffic_entry_card"),
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, ExpressCrimson.copy(alpha = 0.28f)),
+                        tonalElevation = 1.dp
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(ExpressCrimson.copy(alpha = 0.14f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Traffic,
+                                    contentDescription = AppStrings.kuwaitTrafficMenuTitle(lang),
+                                    tint = ExpressCrimson,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Text(
+                                    text = AppStrings.kuwaitTrafficMenuTitle(lang),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = AppStrings.kuwaitTrafficEntryCardSubtitle(
+                                        closed = trafficSummary.closedCount,
+                                        blocked = trafficSummary.blockedCount,
+                                        avgMin = trafficSummary.avgExtraMinutes,
+                                        lang = lang
+                                    ),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            Surface(
+                                color = ExpressCrimson,
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Text(
+                                    text = AppStrings.kuwaitTrafficEntryCta(lang),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -405,10 +506,9 @@ private fun KptcHeroCard(
             contentDescription = "KPTC Kuwait - We're Closer Than You Think"
         ),
         HeroSlideItem(
-            id = "route_106_quiz",
-            imageRes = R.drawable.img_kptc_hero_route106,
-            contentDescription = "KPTC Route 106 - Which destination does this bus go to? Fahaheel",
-            targetRouteNumber = "106"
+            id = "bus_al_diwanya",
+            imageRes = R.drawable.img_kptc_bus_al_diwanya,
+            contentDescription = "KPTC Bus Al Diwanya - WiFi, Charger, TV, Comfort, Drinks"
         ),
         HeroSlideItem(
             id = "route_21_quiz",

@@ -189,4 +189,26 @@ class ExampleRobolectricTest {
         assertTrue(shareEn.contains(route13.corridorSummary))
         assertTrue(shareEn.contains("KPTC"))
     }
+
+    @Test
+    fun `kuwait road conditions cover closed blocked traffic and open corridors with AST time`() {
+        val conditions = com.example.data.ServiceAlertEngine.kuwaitRoadConditions()
+        val statuses = conditions.map { it.status }.toSet()
+        assertTrue(com.example.model.RoadConditionStatus.CLOSED in statuses)
+        assertTrue(com.example.model.RoadConditionStatus.BLOCKED in statuses)
+        assertTrue(com.example.model.RoadConditionStatus.HEAVY_TRAFFIC in statuses)
+        assertTrue(com.example.model.RoadConditionStatus.OPEN_SMOOTH in statuses)
+
+        conditions.forEach { road ->
+            assertTrue(road.roadNameEn.isNotBlank() && road.roadNameAr.isNotBlank())
+            assertTrue(road.trafficTimeLabelEn.isNotBlank() && road.trafficTimeLabelAr.isNotBlank())
+            assertTrue(road.affectedRouteNumbers.isNotEmpty())
+        }
+
+        val summary = com.example.data.ServiceAlertEngine.kuwaitTrafficSummary()
+        assertTrue(summary.kuwaitTimeFormatted.contains("AST"))
+        assertEquals(conditions.count { it.status == com.example.model.RoadConditionStatus.CLOSED }, summary.closedCount)
+        assertEquals(conditions.count { it.status == com.example.model.RoadConditionStatus.BLOCKED }, summary.blockedCount)
+        assertTrue(summary.avgExtraMinutes > 0)
+    }
 }
